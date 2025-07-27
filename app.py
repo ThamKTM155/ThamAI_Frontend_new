@@ -1,31 +1,23 @@
 from flask import Flask, request, jsonify
-import openai
 import os
-from flask_cors import CORS
 
 app = Flask(__name__)
-CORS(app)
-
-openai.api_key = os.getenv("OPENAI_API_KEY")
 
 @app.route("/")
 def home():
-    return "ThamAI Backend is running!"
+    return "Chào mừng đến với ThamAI Backend!"
 
 @app.route("/chat", methods=["POST"])
 def chat():
-    data = request.json
+    data = request.get_json()
     user_message = data.get("message", "")
 
-    try:
-        response = openai.ChatCompletion.create(
-            model="gpt-4",
-            messages=[
-                {"role": "system", "content": "Bạn là trợ lý ảo ThamAI thân thiện."},
-                {"role": "user", "content": user_message}
-            ]
-        )
-        answer = response.choices[0].message["content"].strip()
-        return jsonify({"reply": answer})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    # Tạm thời phản hồi đơn giản – sau này thay bằng OpenAI
+    assistant_reply = f"Bạn vừa nói: {user_message}"
+
+    return jsonify({"response": assistant_reply})
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+
+
