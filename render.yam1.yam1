@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: ThamAI_Backend_clean-4
+    env: python
+    buildCommand: ""
+    startCommand: gunicorn app:app
+    autoDeploy: true
