@@ -1,11 +1,5 @@
 flask
-<<<<<<< HEAD
 flask-cors
 openai
 gunicorn
 python-dotenv
-=======
-openai
-python-dotenv
-flask-cors
->>>>>>> 78d84fa (Initial commit)
