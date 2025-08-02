@@ -17,7 +17,7 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 # Route kiểm tra kết nối backend
 @app.route("/", methods=["GET"])
 def home():
-    return "✅ ThamAI backend is running."
+    return jsonify({"message": "✅ ThamAI backend is running."})
 
 # Route chính để nhận yêu cầu từ frontend
 @app.route("/chat", methods=["POST"])
@@ -37,7 +37,7 @@ def chat():
             }]
         )
         reply = response["choices"][0]["message"]["content"]
-        return jsonify({"response": reply})  # ✅ Đã sửa chỗ này
+        return jsonify({"response": reply})
     except Exception as e:
         print("❌ Lỗi khi gọi OpenAI API:", e)
         return jsonify({"response": "⚠️ Đã xảy ra lỗi khi gọi OpenAI."})
@@ -45,3 +45,4 @@ def chat():
 # Chạy ứng dụng Flask
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
+
