@@ -11,7 +11,7 @@ load_dotenv()
 app = Flask(__name__)
 
 # ✅ Chỉ cho phép frontend chính thức được gọi đến backend (tăng bảo mật)
-CORS(app, resources={r"/*": {"origins": ["https://thach-ai-fronted-new-3ehe.vercel.app"]}})
+CORS(app, origins=["https://thach-ai-frontend-fresh.vercel.app"])
 
 # Thiết lập khóa API OpenAI từ biến môi trường
 openai.api_key = os.getenv("OPENAI_API_KEY")
