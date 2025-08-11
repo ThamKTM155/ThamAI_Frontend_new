@@ -1,11 +1,91 @@
 /* style.css */
-body { font-family: Arial, sans-serif; background:#f3f5f7; margin:0; padding:0; display:flex; justify-content:center; align-items:center; height:100vh; }
-.container { width:420px; background:#fff; border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,0.08); padding:16px; }
-.chat-box { height:380px; overflow:auto; border:1px solid #eee; padding:12px; border-radius:6px; background:#fafafa; }
-.message { margin:8px 0; padding:8px 10px; border-radius:6px; max-width:85%; }
-.message.user { background:#dfeffd; margin-left:auto; text-align:right; }
-.message.bot { background:#f0f0f0; margin-right:auto; text-align:left; }
-.input-row { display:flex; gap:8px; margin-top:10px; }
-.input-row input { flex:1; padding:10px; border-radius:6px; border:1px solid #ddd; }
-.input-row button { padding:10px 14px; border-radius:6px; border:none; background:#0070f3; color:#fff; cursor:pointer; }
-.status { margin-top:8px; color:#666; font-size:13px; }
+body {
+  font-family: Arial, sans-serif;
+  background: #f3f5f7;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.container {
+  width: 420px;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-box {
+  height: 380px;
+  overflow-y: auto;
+  border: 1px solid #eee;
+  padding: 12px;
+  border-radius: 8px;
+  background: #fafafa;
+  display: flex;
+  flex-direction: column;
+}
+
+.message {
+  margin: 6px 0;
+  padding: 8px 12px;
+  border-radius: 10px;
+  max-width: 80%;
+  word-wrap: break-word;
+  animation: fadeIn 0.3s ease;
+}
+
+.message.bot {
+  background-color: #f0f4ff;
+  align-self: flex-start;
+}
+
+.message.user {
+  background-color: #d0f0c0;
+  align-self: flex-end;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.input-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.input-row input {
+  flex: 1;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+  font-size: 14px;
+}
+
+.input-row button {
+  padding: 10px 14px;
+  border-radius: 6px;
+  border: none;
+  background: #0070f3;
+  color: #fff;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.2s ease;
+}
+
+.input-row button:hover {
+  background: #005bb5;
+}
+
+.status {
+  margin-top: 8px;
+  color: #666;
+  font-size: 13px;
+}

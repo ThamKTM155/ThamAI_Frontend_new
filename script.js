@@ -1,13 +1,12 @@
-// script.js
 const chatBox = document.getElementById("chat-box");
 const userInput = document.getElementById("user-input");
 const sendButton = document.getElementById("send-button");
 const status = document.getElementById("status");
 
-// Địa chỉ backend mới
+// API backend mới
 const apiUrl = "https://thamai-backend-new.onrender.com/chat";
 
-// Hàm thêm tin nhắn vào khung chat
+// Thêm tin nhắn vào khung chat
 function appendMessage(sender, text) {
   const el = document.createElement("div");
   el.className = "message " + sender;
@@ -16,7 +15,27 @@ function appendMessage(sender, text) {
   chatBox.scrollTop = chatBox.scrollHeight;
 }
 
-// Hàm gửi tin nhắn
+// Hiệu ứng gõ chữ cho bot
+function typeMessage(sender, text, speed = 30) {
+  const el = document.createElement("div");
+  el.className = "message " + sender;
+  el.innerText = "";
+  chatBox.appendChild(el);
+  chatBox.scrollTop = chatBox.scrollHeight;
+
+  let index = 0;
+  function typeChar() {
+    if (index < text.length) {
+      el.innerText += text.charAt(index);
+      index++;
+      chatBox.scrollTop = chatBox.scrollHeight;
+      setTimeout(typeChar, speed);
+    }
+  }
+  typeChar();
+}
+
+// Gửi tin nhắn
 async function sendMessage() {
   const msg = userInput.value.trim();
   if (!msg) return;
@@ -33,16 +52,14 @@ async function sendMessage() {
     });
 
     if (!res.ok) {
-      const txt = await res.text();
       appendMessage("bot", "⚠️ Lỗi server: " + res.status);
       status.innerText = "Lỗi: " + res.status;
-      console.error("Response not ok:", res.status, txt);
       return;
     }
 
     const data = await res.json();
     if (data.reply) {
-      appendMessage("bot", data.reply);
+      typeMessage("bot", data.reply);
       status.innerText = "✅ Hoàn tất";
     } else if (data.message) {
       appendMessage("bot", data.message);
@@ -55,14 +72,16 @@ async function sendMessage() {
   } catch (err) {
     appendMessage("bot", "⚠️ Lỗi kết nối: " + err.message);
     status.innerText = "⚠️ Lỗi kết nối";
-    console.error(err);
   }
 }
 
-// Sự kiện khi bấm nút gửi
+// Sự kiện click gửi
 sendButton.addEventListener("click", sendMessage);
 
-// Sự kiện khi nhấn Enter
-userInput.addEventListener("keypress", (e) => {
-  if (e.key === "Enter") sendMessage();
+// Enter gửi tin, Shift+Enter xuống dòng
+userInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
 });
