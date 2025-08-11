@@ -1,32 +1,54 @@
+/* ===== ThamAI Frontend - script.js ===== */
 const chatBox = document.getElementById("chat-box");
 const userInput = document.getElementById("user-input");
 const sendButton = document.getElementById("send-button");
 const status = document.getElementById("status");
 
-// API backend mới
+// Địa chỉ backend
 const apiUrl = "https://thamai-backend-new.onrender.com/chat";
 
-// Thêm tin nhắn vào khung chat
+// Hàm thêm tin nhắn kèm avatar
 function appendMessage(sender, text) {
-  const el = document.createElement("div");
-  el.className = "message " + sender;
-  el.innerText = text;
-  chatBox.appendChild(el);
+  const wrapper = document.createElement("div");
+  wrapper.className = "message-wrapper " + sender;
+
+  const avatar = document.createElement("img");
+  avatar.className = "avatar";
+  avatar.src = sender === "bot" ? "assets/bot.png" : "assets/user.png";
+  avatar.alt = sender;
+
+  const msg = document.createElement("div");
+  msg.className = "message " + sender;
+  msg.innerText = text;
+
+  wrapper.appendChild(avatar);
+  wrapper.appendChild(msg);
+  chatBox.appendChild(wrapper);
   chatBox.scrollTop = chatBox.scrollHeight;
 }
 
-// Hiệu ứng gõ chữ cho bot
+// Hàm gõ chữ từng ký tự
 function typeMessage(sender, text, speed = 30) {
-  const el = document.createElement("div");
-  el.className = "message " + sender;
-  el.innerText = "";
-  chatBox.appendChild(el);
+  const wrapper = document.createElement("div");
+  wrapper.className = "message-wrapper " + sender;
+
+  const avatar = document.createElement("img");
+  avatar.className = "avatar";
+  avatar.src = sender === "bot" ? "assets/bot.png" : "assets/user.png";
+  avatar.alt = sender;
+
+  const msg = document.createElement("div");
+  msg.className = "message " + sender;
+
+  wrapper.appendChild(avatar);
+  wrapper.appendChild(msg);
+  chatBox.appendChild(wrapper);
   chatBox.scrollTop = chatBox.scrollHeight;
 
   let index = 0;
   function typeChar() {
     if (index < text.length) {
-      el.innerText += text.charAt(index);
+      msg.innerText += text.charAt(index);
       index++;
       chatBox.scrollTop = chatBox.scrollHeight;
       setTimeout(typeChar, speed);
@@ -75,13 +97,8 @@ async function sendMessage() {
   }
 }
 
-// Sự kiện click gửi
+// Sự kiện gửi
 sendButton.addEventListener("click", sendMessage);
-
-// Enter gửi tin, Shift+Enter xuống dòng
-userInput.addEventListener("keydown", (e) => {
-  if (e.key === "Enter" && !e.shiftKey) {
-    e.preventDefault();
-    sendMessage();
-  }
+userInput.addEventListener("keypress", (e) => {
+  if (e.key === "Enter") sendMessage();
 });
