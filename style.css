@@ -1,4 +1,4 @@
-/* ===== ThamAI Frontend - style.css ===== */
+/* ===== ThamAI Frontend - style.css (Phiên bản tối ưu) ===== */
 body {
   font-family: Arial, sans-serif;
   background: #f3f5f7;
@@ -28,6 +28,9 @@ body {
   padding: 12px;
   border-radius: 6px;
   background: #fafafa;
+  /* Bổ sung */
+  white-space: normal;
+  word-break: break-word;
 }
 
 .message-wrapper {
@@ -56,12 +59,17 @@ body {
   border-radius: 10px;
   max-width: 80%;
   word-wrap: break-word;
-  line-height: 1.5;
+  line-height: 1.5;             /* Tăng khoảng cách dòng */
+  white-space: pre-wrap;        /* Giữ nguyên khoảng trắng, xuống dòng */
+  word-spacing: 0.1em;          /* Khoảng cách giữa các từ */
+  letter-spacing: 0.02em;       /* Khoảng cách giữa các ký tự */
+  background-color: #f0f4ff;
+  animation: fadeIn 0.6s ease;
 }
 
 .message.bot {
   background-color: #f0f4ff;
-  animation: fadeIn 0.3s ease;
+  animation: fadeIn 0.6s ease;
 }
 
 .message.user {
