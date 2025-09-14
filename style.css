@@ -1,0 +1,120 @@
+/* ===== ThamAI Frontend - style.css (Phiên bản tối ưu) ===== */
+body {
+  font-family: Arial, sans-serif;
+  background: #f3f5f7;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  letter-spacing: 0.6px;
+}
+
+.container {
+  width: 420px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-box {
+  height: 380px;
+  overflow-y: auto;
+  border: 1px solid #eee;
+  padding: 12px;
+  border-radius: 6px;
+  background: #fafafa;
+  /* Bổ sung */
+  white-space: normal;
+  word-break: break-word;
+}
+
+.message-wrapper {
+  display: flex;
+  align-items: flex-start;
+  margin: 8px 0;
+}
+
+.message-wrapper.bot {
+  flex-direction: row;
+}
+
+.message-wrapper.user {
+  flex-direction: row-reverse;
+}
+
+.avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  margin: 0 8px;
+}
+
+.message {
+  padding: 8px 12px;
+  border-radius: 10px;
+  max-width: 80%;
+  word-wrap: break-word;
+  line-height: 1.5;             /* Tăng khoảng cách dòng */
+  white-space: pre-wrap;        /* Giữ nguyên khoảng trắng, xuống dòng */
+  word-spacing: 0.1em;          /* Khoảng cách giữa các từ */
+  letter-spacing: 0.02em;       /* Khoảng cách giữa các ký tự */
+  background-color: #f0f4ff;
+  animation: fadeIn 0.6s ease;
+}
+
+.message.bot {
+  background-color: #f0f4ff;
+  animation: fadeIn 0.6s ease;
+}
+
+.message.user {
+  background-color: #d0f0c0;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.input-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.input-row input {
+  flex: 1;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+}
+
+.input-row button {
+  padding: 10px 14px;
+  border-radius: 6px;
+  border: none;
+  background: #0070f3;
+  color: #fff;
+  cursor: pointer;
+}
+
+.status {
+  margin-top: 8px;
+  color: #666;
+  font-size: 13px;
+}
+
+/* Mobile responsive */
+@media (max-width: 480px) {
+  .container {
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
+  }
+}

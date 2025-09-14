@@ -1,0 +1,30 @@
+<<<<<<< HEAD
+# Windows system files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Node.js dependencies (nếu có)
+node_modules/
+
+# Logs
+*.log
+
+# VSCode settings
+.vscode/
+
+# Python cache (nếu backend chạy trong cùng thư mục)
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Build/dist files
+dist/
+build/
+=======
+node_modules/
+.vscode/
+.DS_Store
+>>>>>>> 10975bf719570c97bcf90c85fb17465ee3d64587
