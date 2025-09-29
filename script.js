@@ -1,104 +1,112 @@
-/* ===== ThamAI Frontend - script.js ===== */
+```javascript
+// ===== ThamAI Frontend - script.js (voice input/output + mic toggle) =====
+
+// Chọn phần tử
 const chatBox = document.getElementById("chat-box");
 const userInput = document.getElementById("user-input");
 const sendButton = document.getElementById("send-button");
-const status = document.getElementById("status");
+const micButton = document.getElementById("mic-button");
+const statusEl = document.getElementById("status");
 
-// Địa chỉ backend
-const apiUrl = "https://thamai-backend-new.onrender.com/chat";
+// API Backend (sửa theo URL Render của anh)
+const API_URL = "https://thamai-backend-clean-1-h88m.onrender.com/chat";
 
-// Hàm thêm tin nhắn kèm avatar
-function appendMessage(sender, text) {
+// --- Hàm thêm tin nhắn vào chat-box ---
+function addMessage(sender, text) {
   const wrapper = document.createElement("div");
-  wrapper.className = "message-wrapper " + sender;
+  wrapper.className = `message-wrapper ${sender}`;
 
   const avatar = document.createElement("img");
-  avatar.className = "avatar";
-  avatar.src = sender === "bot" ? "assets/bot.png" : "assets/user.png";
+  avatar.src = sender === "user" ? "user.png" : "bot.png";
   avatar.alt = sender;
+  avatar.className = "avatar";
 
-  const msg = document.createElement("div");
-  msg.className = "message " + sender;
-  msg.innerText = text;
+  const message = document.createElement("div");
+  message.className = `message ${sender}`;
+  message.textContent = text;
 
   wrapper.appendChild(avatar);
-  wrapper.appendChild(msg);
+  wrapper.appendChild(message);
   chatBox.appendChild(wrapper);
   chatBox.scrollTop = chatBox.scrollHeight;
 }
 
-// Hàm gõ chữ từng ký tự
-function typeMessage(sender, text, speed = 30) {
-  const wrapper = document.createElement("div");
-  wrapper.className = "message-wrapper " + sender;
-
-  const avatar = document.createElement("img");
-  avatar.className = "avatar";
-  avatar.src = sender === "bot" ? "assets/bot.png" : "assets/user.png";
-  avatar.alt = sender;
-
-  const msg = document.createElement("div");
-  msg.className = "message " + sender;
-
-  wrapper.appendChild(avatar);
-  wrapper.appendChild(msg);
-  chatBox.appendChild(wrapper);
-  chatBox.scrollTop = chatBox.scrollHeight;
-
-  let index = 0;
-  function typeChar() {
-    if (index < text.length) {
-      msg.innerText += text.charAt(index);
-      index++;
-      chatBox.scrollTop = chatBox.scrollHeight;
-      setTimeout(typeChar, speed);
-    }
-  }
-  typeChar();
-}
-
-// Gửi tin nhắn
+// --- Gửi tin nhắn đến backend ---
 async function sendMessage() {
-  const msg = userInput.value.trim();
-  if (!msg) return;
+  const text = userInput.value.trim();
+  if (!text) return;
 
-  appendMessage("user", msg);
+  addMessage("user", text);
   userInput.value = "";
-  status.innerText = "⏳ Đang gửi...";
+  statusEl.textContent = "⏳ Đang trả lời...";
 
   try {
-    const res = await fetch(apiUrl, {
+    const res = await fetch(API_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: msg })
+      body: JSON.stringify({ message: text })
     });
-
-    if (!res.ok) {
-      appendMessage("bot", "⚠️ Lỗi server: " + res.status);
-      status.innerText = "Lỗi: " + res.status;
-      return;
-    }
-
     const data = await res.json();
-    if (data.reply) {
-      typeMessage("bot", data.reply);
-      status.innerText = "✅ Hoàn tất";
-    } else if (data.message) {
-      appendMessage("bot", data.message);
-      status.innerText = "✅ Hoàn tất (thông báo)";
-    } else {
-      appendMessage("bot", "⚠️ Phản hồi không đúng định dạng.");
-      status.innerText = "⚠️ Sai định dạng phản hồi";
-    }
+    const reply = data.reply || "❌ Không có phản hồi";
+    addMessage("bot", reply);
+    statusEl.textContent = "💬 Sẵn sàng";
 
+    // Đọc to trả lời (voice output)
+    speakText(reply);
   } catch (err) {
-    appendMessage("bot", "⚠️ Lỗi kết nối: " + err.message);
-    status.innerText = "⚠️ Lỗi kết nối";
+    console.error(err);
+    statusEl.textContent = "⚠️ Lỗi kết nối";
   }
 }
 
-// Sự kiện gửi
+// --- Voice Output (Text-to-Speech) ---
+function speakText(text) {
+  if ("speechSynthesis" in window) {
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.lang = "vi-VN";
+    window.speechSynthesis.speak(utter);
+  }
+}
+
+// --- Voice Input (Speech-to-Text) ---
+let recognition;
+if ("webkitSpeechRecognition" in window) {
+  recognition = new webkitSpeechRecognition();
+  recognition.lang = "vi-VN";
+  recognition.continuous = false;
+  recognition.interimResults = false;
+
+  recognition.onstart = () => {
+    statusEl.textContent = "🎤 Đang nghe...";
+    micButton.classList.add("recording");
+  };
+
+  recognition.onend = () => {
+    statusEl.textContent = "💬 Sẵn sàng";
+    micButton.classList.remove("recording");
+  };
+
+  recognition.onresult = (event) => {
+    const transcript = event.results[0][0].transcript;
+    userInput.value = transcript;
+    sendMessage();
+  };
+} else {
+  statusEl.textContent = "⚠️ Trình duyệt không hỗ trợ voice input";
+}
+
+// --- Sự kiện ---
 sendButton.addEventListener("click", sendMessage);
-userInput.addEventListener("keypress", (e) => {
+userInput.addEventListener("keydown", (e) => {
   if (e.key === "Enter") sendMessage();
 });
+
+micButton.addEventListener("click", () => {
+  if (!recognition) return;
+  if (micButton.classList.contains("recording")) {
+    recognition.stop();
+  } else {
+    recognition.start();
+  }
+});
+```

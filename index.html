@@ -1,20 +1,149 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ThamAI Chat</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>ThamAI — Trợ lý nghe & nói</title>
+
+  <style>
+    :root{
+      --bg:#f3f5f7;
+      --card:#ffffff;
+      --bot:#eef0f6;
+      --user:#d0f0c0;
+      --accent:#0b84ff;
+      --muted:#6c757d;
+      --danger:#e74c3c;
+    }
+    html,body{height:100%;margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg)}
+    .wrap{height:100%;display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;}
+    .card{width:420px;max-width:96%;height:720px;display:flex;flex-direction:column;background:var(--card);border-radius:12px;box-shadow:0 10px 30px rgba(20,30,40,0.08);overflow:hidden;}
+    .header{padding:12px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #e9edf2;background:linear-gradient(90deg,#fff 0%, #fbfdff 100%);}
+    .title{display:flex;gap:10px;align-items:center}
+    .title h1{font-size:16px;margin:0}
+    .controls{display:flex;gap:8px;align-items:center}
+    .chat-area{flex:1;display:flex;flex-direction:column;background:#f7f9fc}
+    .messages{flex:1;padding:14px;overflow:auto;display:flex;flex-direction:column;gap:10px;}
+    .bubble{max-width:78%;padding:10px 14px;border-radius:14px;line-height:1.45;word-wrap:break-word;white-space:pre-wrap;box-shadow:0 2px 6px rgba(10,10,20,0.02);animation:fadeUp .18s ease;}
+    .bubble.bot{align-self:flex-start;background:var(--bot); color:#111}
+    .bubble.user{align-self:flex-end;background:var(--user); color:#044}
+    .typing{font-style:italic;color:#666;font-size:13px;}
+    .input-area{padding:12px;display:flex;gap:8px;align-items:center;border-top:1px solid #eaeaee;background:#fff}
+    .input-area input{flex:1;padding:10px;border-radius:8px;border:1px solid #ddd;font-size:14px}
+    .btn{border:0;padding:8px 12px;border-radius:8px;cursor:pointer;font-size:15px}
+    .btn.primary{background:var(--accent);color:#fff}
+    .btn.mic{background:#2ecc71;color:#fff;font-size:18px}
+    .btn.mic.recording{background:var(--danger)}
+    .btn.mute{background:var(--muted);color:#fff}
+    .btn.mute.muted{background:var(--danger)}
+    .select-voice{padding:6px 8px;border-radius:8px;border:1px solid #d9e1ea}
+    .statusbar{font-size:12px;color:#666;padding:8px;text-align:center;border-top:1px solid #eee;background:#fbfdff}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  </style>
 </head>
 <body>
-  <div class="container">
-    <div id="chat-box" class="chat-box"></div>
-    <div class="input-row">
-      <input id="user-input" type="text" placeholder="Gõ tin nhắn..." />
-      <button id="send-button">Gửi</button>
+  <div class="wrap">
+    <div class="card">
+      <div class="header">
+        <div class="title"><h1>ThamAI Chat</h1></div>
+        <div class="controls">
+          <select id="voice-select" class="select-voice"></select>
+          <button id="toggle-voice" class="btn mute">🔊</button>
+        </div>
+      </div>
+      <div class="chat-area">
+        <div id="messages" class="messages"></div>
+        <div class="input-area">
+          <input id="input-text" type="text" placeholder="Nhập tin nhắn..." />
+          <button id="send-btn" class="btn primary">Gửi</button>
+          <button id="mic-btn" class="btn mic">🎤</button>
+          <button id="clear-btn" class="btn">🗑</button>
+        </div>
+        <div id="status" class="statusbar">💬 Sẵn sàng</div>
+      </div>
     </div>
-    <div id="status" class="status">💬 Sẵn sàng</div>
   </div>
-  <script src="script.js"></script>
+
+<script>
+const BACKEND_URL = "https://thamai-backend-new.onrender.com/chat";
+
+const messagesEl = document.getElementById("messages");
+const inputEl = document.getElementById("input-text");
+const sendBtn = document.getElementById("send-btn");
+const micBtn = document.getElementById("mic-btn");
+const clearBtn = document.getElementById("clear-btn");
+const statusEl = document.getElementById("status");
+const voiceSelect = document.getElementById("voice-select");
+const toggleVoiceBtn = document.getElementById("toggle-voice");
+
+let recognition, recording=false, muted=false;
+let voices=[], selectedVoice=null;
+
+function appendBubble(text,sender="bot"){
+  const b=document.createElement("div");
+  b.className="bubble "+sender;
+  b.textContent=text;
+  messagesEl.appendChild(b);
+  messagesEl.scrollTop=messagesEl.scrollHeight;
+}
+function showTyping(){
+  const t=document.createElement("div");
+  t.id="typing";t.className="typing";t.textContent="Đang gõ...";
+  messagesEl.appendChild(t);
+  messagesEl.scrollTop=messagesEl.scrollHeight;
+}
+function hideTyping(){const t=document.getElementById("typing");if(t)t.remove();}
+function speak(text){
+  if(muted)return;
+  const u=new SpeechSynthesisUtterance(text);
+  if(selectedVoice)u.voice=selectedVoice;
+  speechSynthesis.speak(u);
+}
+
+// Send message
+async function sendMessage(){
+  const msg=inputEl.value.trim();
+  if(!msg)return;
+  appendBubble(msg,"user");
+  inputEl.value="";
+  showTyping();
+  try{
+    const res=await fetch(BACKEND_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:msg})});
+    const data=await res.json();
+    hideTyping();
+    appendBubble(data.reply||"(không có phản hồi)","bot");
+    speak(data.reply||"");
+  }catch(e){
+    hideTyping();
+    appendBubble("⚠️ Lỗi kết nối backend","bot");
+  }
+}
+
+// Voice input
+if("webkitSpeechRecognition" in window){
+  recognition=new webkitSpeechRecognition();
+  recognition.lang="vi-VN";
+  recognition.continuous=false; recognition.interimResults=false;
+  recognition.onstart=()=>{recording=true;micBtn.classList.add("recording");statusEl.textContent="🎤 Đang nghe...";};
+  recognition.onend=()=>{recording=false;micBtn.classList.remove("recording");statusEl.textContent="💬 Sẵn sàng";};
+  recognition.onresult=(e)=>{const t=e.results[0][0].transcript;inputEl.value=t;sendMessage();};
+}
+micBtn.onclick=()=>{if(!recognition)return; recording?recognition.stop():recognition.start();};
+sendBtn.onclick=sendMessage;
+inputEl.addEventListener("keydown",e=>{if(e.key==="Enter")sendMessage();});
+clearBtn.onclick=()=>{messagesEl.innerHTML="";};
+
+// Voice output
+function loadVoices(){
+  voices=speechSynthesis.getVoices();
+  voiceSelect.innerHTML="";
+  voices.forEach((v,i)=>{const o=document.createElement("option");o.value=i;o.textContent=v.name+" ("+v.lang+")";voiceSelect.appendChild(o);});
+  if(voices.length){selectedVoice=voices[0];}
+}
+voiceSelect.onchange=()=>{selectedVoice=voices[voiceSelect.value];};
+speechSynthesis.onvoiceschanged=loadVoices;
+toggleVoiceBtn.onclick=()=>{muted=!muted;toggleVoiceBtn.classList.toggle("muted",muted);toggleVoiceBtn.textContent=muted?"🔇":"🔊";};
+loadVoices();
+</script>
 </body>
 </html>
