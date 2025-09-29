@@ -1,157 +1,171 @@
-```javascript
-// ==========================
-// CẤU HÌNH CÁC BIẾN TOÀN CỤC
-// ==========================
-const API_BASE = "http://localhost:5000"; // backend Flask
-const chatBox = document.getElementById("chatBox");
-const inputField = document.getElementById("userInput");
-const sendButton = document.getElementById("sendBtn");
-const voiceButton = document.getElementById("voiceBtn");
-const muteButton = document.getElementById("muteBtn");
-const voiceSelect = document.getElementById("voiceSelect");
+const API_URL = "https://thamai-backend-new.onrender.com";
 
-let isMuted = false;
+const chatBox = document.getElementById("chat-box");
+const userInput = document.getElementById("user-input");
+const sendBtn = document.getElementById("send-btn");
+const voiceBtn = document.getElementById("voice-btn");
+const viewLogsBtn = document.getElementById("view-logs");
+const clearLogsBtn = document.getElementById("clear-logs");
+const toggleTtsBtn = document.getElementById("toggle-tts");
+const voiceSelect = document.getElementById("voice-select");
+
+let ttsEnabled = true;
 let recognition;
-let synth = window.speechSynthesis;
 
 // ==========================
-// HÀM HIỂN THỊ TIN NHẮN
+// Thêm tin nhắn vào khung chat
 // ==========================
-function appendMessage(role, content, timestamp = null) {
-  const msgDiv = document.createElement("div");
-  msgDiv.className = role === "user" ? "user-message" : "bot-message";
-  msgDiv.textContent = timestamp
-    ? `[${timestamp}] ${role}: ${content}`
-    : `${role}: ${content}`;
-  chatBox.appendChild(msgDiv);
+function addMessage(sender, text) {
+  const msg = document.createElement("div");
+  msg.classList.add("message", sender);
+
+  const avatar = document.createElement("img");
+  avatar.classList.add("avatar", sender);
+  avatar.src = sender === "user"
+    ? "https://cdn-icons-png.flaticon.com/512/1946/1946429.png"
+    : "https://cdn-icons-png.flaticon.com/512/4712/4712109.png";
+
+  const bubble = document.createElement("div");
+  bubble.classList.add("bubble");
+  bubble.textContent = text;
+
+  if (sender === "user") {
+    msg.appendChild(bubble);
+    msg.appendChild(avatar);
+  } else {
+    msg.appendChild(avatar);
+    msg.appendChild(bubble);
+  }
+
+  chatBox.appendChild(msg);
   chatBox.scrollTop = chatBox.scrollHeight;
 }
 
 // ==========================
-// GỬI TIN NHẮN USER → BACKEND
+// Gửi tin nhắn
 // ==========================
 async function sendMessage() {
-  const text = inputField.value.trim();
+  const text = userInput.value.trim();
   if (!text) return;
 
-  appendMessage("user", text);
-  inputField.value = "";
+  addMessage("user", text);
+  userInput.value = "";
 
   try {
-    const response = await fetch(`${API_BASE}/chat`, {
+    const res = await fetch(`${API_URL}/chat`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: text })
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({message: text})
     });
+    const data = await res.json();
+    const reply = data.reply || "[Lỗi: không có phản hồi]";
+    addMessage("bot", reply);
 
-    const data = await response.json();
-    const botReply = data.reply || "(Không có phản hồi)";
-    appendMessage("bot", botReply);
-
-    if (!isMuted) speak(botReply);
-  } catch (error) {
-    console.error("Lỗi gửi tin nhắn:", error);
-    appendMessage("bot", "⚠️ Lỗi kết nối backend!");
+    if (ttsEnabled) speakText(reply);
+  } catch (err) {
+    addMessage("bot", "❌ Lỗi kết nối backend.");
+    console.error(err);
   }
 }
 
 // ==========================
-// VOICE OUTPUT (Text-to-Speech)
+// Voice Input
 // ==========================
-function speak(text) {
-  if (!synth) return;
-  const utterance = new SpeechSynthesisUtterance(text);
-  const selectedVoice = voiceSelect.value;
-
-  const voices = synth.getVoices();
-  const voice = voices.find(v => v.name === selectedVoice);
-  if (voice) utterance.voice = voice;
-
-  synth.speak(utterance);
-}
-
-// ==========================
-// VOICE INPUT (Speech-to-Text)
-// ==========================
-function initRecognition() {
-  const SpeechRecognition =
-    window.SpeechRecognition || window.webkitSpeechRecognition;
+function initSpeechRecognition() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SpeechRecognition) {
-    alert("Trình duyệt không hỗ trợ SpeechRecognition!");
+    alert("Trình duyệt không hỗ trợ SpeechRecognition");
     return;
   }
-
   recognition = new SpeechRecognition();
   recognition.lang = "vi-VN";
-  recognition.interimResults = false;
-  recognition.maxAlternatives = 1;
 
-  recognition.onresult = event => {
-    const transcript = event.results[0][0].transcript;
-    inputField.value = transcript;
+  recognition.onresult = (event) => {
+    const text = event.results[0][0].transcript;
+    userInput.value = text;
     sendMessage();
   };
 
-  recognition.onerror = event => {
-    console.error("Lỗi voice input:", event.error);
-  };
+  recognition.onerror = (event) => console.error("SpeechRecognition error:", event.error);
 }
 
-// ==========================
-// LẤY DANH SÁCH GIỌNG ĐỌC
-// ==========================
-function loadVoices() {
-  const voices = synth.getVoices();
-  voiceSelect.innerHTML = "";
-  voices.forEach(v => {
-    const option = document.createElement("option");
-    option.value = v.name;
-    option.textContent = `${v.name} (${v.lang})`;
-    voiceSelect.appendChild(option);
-  });
-}
-window.speechSynthesis.onvoiceschanged = loadVoices;
+voiceBtn.addEventListener("click", () => {
+  if (!recognition) initSpeechRecognition();
+  recognition.start();
+});
 
 // ==========================
-// XEM LỊCH SỬ LOGS (GET /logs)
+// Voice Output (speakText fallback)
+// ==========================
+function speakText(text) {
+  if (!window.speechSynthesis) {
+    console.warn("Trình duyệt không hỗ trợ speechSynthesis.");
+    return;
+  }
+
+  const voices = speechSynthesis.getVoices();
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = "vi-VN";
+
+  if (voiceSelect.value === "female") {
+    utterance.voice = voices.find(v => v.lang === "vi-VN" && v.name.toLowerCase().includes("female")) || null;
+  } else if (voiceSelect.value === "male") {
+    utterance.voice = voices.find(v => v.lang === "vi-VN" && v.name.toLowerCase().includes("male")) || null;
+  }
+
+  // Fallback: nếu chưa có voice nào thì vẫn đọc bằng mặc định
+  if (!utterance.voice && voices.length > 0) {
+    utterance.voice = voices.find(v => v.lang === "vi-VN") || voices[0];
+  }
+
+  speechSynthesis.speak(utterance);
+}
+
+toggleTtsBtn.addEventListener("click", () => {
+  ttsEnabled = !ttsEnabled;
+  toggleTtsBtn.textContent = ttsEnabled ? "🔊 Tắt tiếng" : "🔈 Bật tiếng";
+});
+
+// ==========================
+// Fetch Logs
 // ==========================
 async function fetchLogs() {
   try {
-    const response = await fetch(`${API_BASE}/logs`);
-    const logs = await response.json();
-    chatBox.innerHTML = "";
-    logs.forEach(msg => {
-      appendMessage(msg.role, msg.content, msg.timestamp);
+    const res = await fetch(`${API_URL}/logs`);
+    const data = await res.json();
+
+    addMessage("bot", "📜 Lịch sử hội thoại:");
+    data.forEach(entry => {
+      addMessage("user", entry.user);
+      addMessage("bot", entry.bot);
     });
-  } catch (error) {
-    console.error("Không lấy được logs:", error);
-    appendMessage("bot", "⚠️ Không tải được lịch sử chat!");
+  } catch (err) {
+    addMessage("bot", "❌ Lỗi tải lịch sử.");
+    console.error(err);
   }
 }
 
 // ==========================
-// GÁN SỰ KIỆN CHO NÚT
+// Clear Logs
 // ==========================
-sendButton.addEventListener("click", sendMessage);
-inputField.addEventListener("keypress", e => {
-  if (e.key === "Enter") sendMessage();
-});
-
-voiceButton.addEventListener("click", () => {
-  if (!recognition) initRecognition();
-  recognition.start();
-});
-
-muteButton.addEventListener("click", () => {
-  isMuted = !isMuted;
-  muteButton.textContent = isMuted ? "🔇 Bật tiếng" : "🔊 Tắt tiếng";
-});
-
-document.getElementById("showLogs").addEventListener("click", fetchLogs);
+async function clearLogs() {
+  try {
+    const res = await fetch(`${API_URL}/logs/clear`, {method: "DELETE"});
+    const data = await res.json();
+    addMessage("bot", data.message || "🗑️ Lịch sử đã được xóa.");
+  } catch (err) {
+    addMessage("bot", "❌ Lỗi khi xóa lịch sử.");
+    console.error(err);
+  }
+}
 
 // ==========================
-// KHỞI TẠO
+// Event Listeners
 // ==========================
-loadVoices();
-initRecognition();
-```
+sendBtn.addEventListener("click", sendMessage);
+userInput.addEventListener("keypress", (e) => { if (e.key === "Enter") sendMessage(); });
+viewLogsBtn.addEventListener("click", fetchLogs);
+clearLogsBtn.addEventListener("click", clearLogs);
+
+// Load voices khi sẵn sàng
+speechSynthesis.onvoiceschanged = () => {};
