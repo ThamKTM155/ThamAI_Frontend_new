@@ -13,13 +13,24 @@
     <div class="controls">
       <input type="text" id="user-input" placeholder="Nhập tin nhắn..." />
       <button id="send-btn">📩</button>
-      <button id="voice-btn">🎤</button>
+      <button id="voice-btn">🎤 Nói</button>
     </div>
 
     <div class="options">
       <button id="view-logs">📜 Xem lịch sử</button>
       <button id="clear-logs">🗑️ Xóa lịch sử</button>
       <button id="toggle-tts">🔊 Tắt tiếng</button>
+
+      <!-- Điều khiển ghi âm gửi về backend -->
+      <div class="voice-section">
+        <button id="btn-record">🎙️ Bắt đầu ghi</button>
+        <button id="btn-stop" disabled>⏹️ Dừng</button>
+        <span id="record-status">Đang chờ...</span>
+        <div id="stt-result"></div>
+      </div>
+
+      <!-- Chọn giọng nói đầu ra -->
+      <label for="voice-select">Chọn giọng đọc:</label>
       <select id="voice-select">
         <option value="default">Mặc định</option>
         <option value="female">Nữ (vi-VN)</option>

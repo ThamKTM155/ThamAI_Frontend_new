@@ -1,3 +1,6 @@
+// ==========================
+// Cấu hình API backend
+// ==========================
 const API_URL = "https://thamai-backend-new.onrender.com";
 
 const chatBox = document.getElementById("chat-box");
@@ -10,10 +13,10 @@ const toggleTtsBtn = document.getElementById("toggle-tts");
 const voiceSelect = document.getElementById("voice-select");
 
 let ttsEnabled = true;
-let recognition;
+let recognition; // Web Speech API recognition
 
 // ==========================
-// Thêm tin nhắn vào khung chat
+// Hàm thêm tin nhắn vào khung chat
 // ==========================
 function addMessage(sender, text) {
   const msg = document.createElement("div");
@@ -21,9 +24,10 @@ function addMessage(sender, text) {
 
   const avatar = document.createElement("img");
   avatar.classList.add("avatar", sender);
-  avatar.src = sender === "user"
-    ? "https://cdn-icons-png.flaticon.com/512/1946/1946429.png"
-    : "https://cdn-icons-png.flaticon.com/512/4712/4712109.png";
+  avatar.src =
+    sender === "user"
+      ? "https://cdn-icons-png.flaticon.com/512/1946/1946429.png"
+      : "https://cdn-icons-png.flaticon.com/512/4712/4712109.png";
 
   const bubble = document.createElement("div");
   bubble.classList.add("bubble");
@@ -42,7 +46,7 @@ function addMessage(sender, text) {
 }
 
 // ==========================
-// Gửi tin nhắn
+// Gửi tin nhắn văn bản tới backend
 // ==========================
 async function sendMessage() {
   const text = userInput.value.trim();
@@ -54,9 +58,10 @@ async function sendMessage() {
   try {
     const res = await fetch(`${API_URL}/chat`, {
       method: "POST",
-      headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({message: text})
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: text }),
     });
+
     const data = await res.json();
     const reply = data.reply || "[Lỗi: không có phản hồi]";
     addMessage("bot", reply);
@@ -69,14 +74,110 @@ async function sendMessage() {
 }
 
 // ==========================
-// Voice Input
+// 🎙️ Voice Input (MediaRecorder -> backend Whisper)
+// ==========================
+(() => {
+  const recordBtn = document.getElementById("btn-record");
+  const stopBtn = document.getElementById("btn-stop");
+  const statusSpan = document.getElementById("record-status");
+  const resultDiv = document.getElementById("stt-result");
+
+  const BACKEND_SPEECH_TO_TEXT = `${API_URL}/speech-to-text`;
+
+  let mediaRecorder = null;
+  let audioChunks = [];
+
+  async function startRecording() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorder = new MediaRecorder(stream);
+      audioChunks = [];
+
+      mediaRecorder.addEventListener("dataavailable", (e) => {
+        if (e.data && e.data.size) audioChunks.push(e.data);
+      });
+
+      mediaRecorder.addEventListener("start", () => {
+        statusSpan.textContent = "🎧 Đang ghi âm...";
+        recordBtn.disabled = true;
+        stopBtn.disabled = false;
+      });
+
+      mediaRecorder.addEventListener("stop", async () => {
+        statusSpan.textContent = "🌀 Đang xử lý âm thanh...";
+        recordBtn.disabled = false;
+        stopBtn.disabled = true;
+
+        const blob = new Blob(audioChunks, {
+          type: audioChunks[0]?.type || "audio/webm",
+        });
+        await sendAudioToBackend(blob);
+      });
+
+      mediaRecorder.start();
+    } catch (err) {
+      console.error("Không thể truy cập micro:", err);
+      statusSpan.textContent = "⚠️ Lỗi: không thể truy cập micro.";
+    }
+  }
+
+  function stopRecording() {
+    if (mediaRecorder && mediaRecorder.state !== "inactive") {
+      mediaRecorder.stop();
+      mediaRecorder.stream.getTracks().forEach((t) => t.stop());
+    }
+  }
+
+  async function sendAudioToBackend(blob) {
+    try {
+      const fd = new FormData();
+      fd.append("file", blob, "recording.webm");
+
+      statusSpan.textContent = "🚀 Đang gửi âm thanh tới server...";
+
+      const resp = await fetch(BACKEND_SPEECH_TO_TEXT, {
+        method: "POST",
+        body: fd,
+      });
+
+      if (!resp.ok) {
+        const txt = await resp.text();
+        console.error("Server trả lỗi:", resp.status, txt);
+        statusSpan.textContent = `Lỗi server: ${resp.status}`;
+        return;
+      }
+
+      const data = await resp.json();
+      const recognized = data.text ?? data.transcript ?? "";
+      resultDiv.textContent = recognized || "[Không nhận diện được giọng nói]";
+      statusSpan.textContent = "✅ Hoàn tất nhận diện.";
+
+      // Sau khi nhận được text -> tự động gửi như tin nhắn chat
+      if (recognized) {
+        userInput.value = recognized;
+        sendMessage();
+      }
+    } catch (err) {
+      console.error("Lỗi gửi audio:", err);
+      statusSpan.textContent = "❌ Lỗi khi gửi âm thanh.";
+    }
+  }
+
+  recordBtn.addEventListener("click", startRecording);
+  stopBtn.addEventListener("click", stopRecording);
+})();
+
+// ==========================
+// 🗣️ Voice Input dự phòng (Web Speech API – trình duyệt)
 // ==========================
 function initSpeechRecognition() {
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const SpeechRecognition =
+    window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SpeechRecognition) {
-    alert("Trình duyệt không hỗ trợ SpeechRecognition");
+    alert("Trình duyệt không hỗ trợ SpeechRecognition.");
     return;
   }
+
   recognition = new SpeechRecognition();
   recognition.lang = "vi-VN";
 
@@ -86,7 +187,8 @@ function initSpeechRecognition() {
     sendMessage();
   };
 
-  recognition.onerror = (event) => console.error("SpeechRecognition error:", event.error);
+  recognition.onerror = (event) =>
+    console.error("SpeechRecognition error:", event.error);
 }
 
 voiceBtn.addEventListener("click", () => {
@@ -95,7 +197,7 @@ voiceBtn.addEventListener("click", () => {
 });
 
 // ==========================
-// Voice Output (speakText fallback)
+// 🔊 Voice Output (Text-to-Speech)
 // ==========================
 function speakText(text) {
   if (!window.speechSynthesis) {
@@ -107,15 +209,22 @@ function speakText(text) {
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = "vi-VN";
 
+  // Chọn giọng
   if (voiceSelect.value === "female") {
-    utterance.voice = voices.find(v => v.lang === "vi-VN" && v.name.toLowerCase().includes("female")) || null;
+    utterance.voice =
+      voices.find(
+        (v) => v.lang === "vi-VN" && v.name.toLowerCase().includes("female")
+      ) || null;
   } else if (voiceSelect.value === "male") {
-    utterance.voice = voices.find(v => v.lang === "vi-VN" && v.name.toLowerCase().includes("male")) || null;
+    utterance.voice =
+      voices.find(
+        (v) => v.lang === "vi-VN" && v.name.toLowerCase().includes("male")
+      ) || null;
   }
 
-  // Fallback: nếu chưa có voice nào thì vẫn đọc bằng mặc định
+  // Fallback: nếu chưa có giọng phù hợp
   if (!utterance.voice && voices.length > 0) {
-    utterance.voice = voices.find(v => v.lang === "vi-VN") || voices[0];
+    utterance.voice = voices.find((v) => v.lang === "vi-VN") || voices[0];
   }
 
   speechSynthesis.speak(utterance);
@@ -127,7 +236,7 @@ toggleTtsBtn.addEventListener("click", () => {
 });
 
 // ==========================
-// Fetch Logs
+// 📜 Xem / Xóa lịch sử chat
 // ==========================
 async function fetchLogs() {
   try {
@@ -135,7 +244,7 @@ async function fetchLogs() {
     const data = await res.json();
 
     addMessage("bot", "📜 Lịch sử hội thoại:");
-    data.forEach(entry => {
+    data.forEach((entry) => {
       addMessage("user", entry.user);
       addMessage("bot", entry.bot);
     });
@@ -145,12 +254,9 @@ async function fetchLogs() {
   }
 }
 
-// ==========================
-// Clear Logs
-// ==========================
 async function clearLogs() {
   try {
-    const res = await fetch(`${API_URL}/logs/clear`, {method: "DELETE"});
+    const res = await fetch(`${API_URL}/logs/clear`, { method: "DELETE" });
     const data = await res.json();
     addMessage("bot", data.message || "🗑️ Lịch sử đã được xóa.");
   } catch (err) {
@@ -160,12 +266,14 @@ async function clearLogs() {
 }
 
 // ==========================
-// Event Listeners
+// ⚙️ Sự kiện giao diện
 // ==========================
 sendBtn.addEventListener("click", sendMessage);
-userInput.addEventListener("keypress", (e) => { if (e.key === "Enter") sendMessage(); });
+userInput.addEventListener("keypress", (e) => {
+  if (e.key === "Enter") sendMessage();
+});
 viewLogsBtn.addEventListener("click", fetchLogs);
 clearLogsBtn.addEventListener("click", clearLogs);
 
-// Load voices khi sẵn sàng
+// Load danh sách giọng nói khi sẵn sàng
 speechSynthesis.onvoiceschanged = () => {};
