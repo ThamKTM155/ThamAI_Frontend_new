@@ -127,23 +127,39 @@ function speakText(text) {
     }
 
     const utterance = new SpeechSynthesisUtterance(text);
+    const selectedVoiceType = localStorage.getItem('voiceType') || document.getElementById('voiceSelect').value;
+    const selectedRate = parseFloat(localStorage.getItem('voiceRate')) || parseFloat(document.getElementById('rateSelect').value);
 
-    // 🗣️ Cấu hình giọng nói
-    utterance.lang = "vi-VN";  // Tiếng Việt
-    utterance.pitch = 1.0;     // Cao độ tự nhiên
-    utterance.rate = 0.9;      // Tốc độ nói chậm lại
-    utterance.volume = 1.0;    // Âm lượng tối đa
+    utterance.lang = "vi-VN";
+    utterance.pitch = 1.0;
+    utterance.rate = selectedRate;
+    utterance.volume = 1.0;
 
-    // 🔍 Chọn giọng nữ Việt Nam nếu có
     const voices = window.speechSynthesis.getVoices();
     const vietnameseVoices = voices.filter(v => v.lang === "vi-VN");
+
     if (vietnameseVoices.length > 0) {
-        // Ưu tiên giọng nữ
-        const femaleVoice = vietnameseVoices.find(v => v.name.toLowerCase().includes("female") || v.name.toLowerCase().includes("woman"));
-        utterance.voice = femaleVoice || vietnameseVoices[0];
+        let chosenVoice = vietnameseVoices[0];
+        if (selectedVoiceType === "female") {
+            chosenVoice = vietnameseVoices.find(v => v.name.toLowerCase().includes("female") || v.name.toLowerCase().includes("woman")) || vietnameseVoices[0];
+        } else {
+            chosenVoice = vietnameseVoices.find(v => v.name.toLowerCase().includes("male") || v.name.toLowerCase().includes("man")) || vietnameseVoices[0];
+        }
+        utterance.voice = chosenVoice;
     }
 
-    // 🎧 Phát âm thanh
-    speechSynthesis.cancel(); // Hủy giọng cũ (nếu đang nói)
+    const indicator = document.getElementById("speakingIndicator");
+    if (indicator) indicator.style.display = "block"; // Hiện hiệu ứng 🔊
+
+    utterance.onend = () => {
+        if (indicator) indicator.style.display = "none"; // Ẩn khi nói xong
+    };
+
+    utterance.onerror = () => {
+        if (indicator) indicator.style.display = "none"; // Ẩn nếu có lỗi
+        console.error("Lỗi khi phát giọng nói.");
+    };
+
+    speechSynthesis.cancel();
     speechSynthesis.speak(utterance);
 }

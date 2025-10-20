@@ -88,10 +88,27 @@
 <body>
 
   <h2>🎧 Trợ lý ThamAI</h2>
+<div id="speakingIndicator" class="speaking-indicator" style="display: none;">
+  🔊 <span>Đang nói...</span>
+</div>
 
   <div id="chat-box">
     <div class="message ai">Xin chào! Tôi là ThamAI, trợ lý ảo của anh Thắm 😊</div>
   </div>
+<div class="voice-settings">
+  <label for="voiceSelect">🎙️ Giọng nói:</label>
+  <select id="voiceSelect">
+    <option value="female" selected>Nữ</option>
+    <option value="male">Nam</option>
+  </select>
+
+  <label for="rateSelect">⏱️ Tốc độ:</label>
+  <select id="rateSelect">
+    <option value="0.8">Chậm</option>
+    <option value="1.0" selected>Bình thường</option>
+    <option value="1.2">Nhanh</option>
+  </select>
+</div>
 
   <div id="input-area">
     <input type="text" id="user-input" placeholder="Nhập tin nhắn..." />
