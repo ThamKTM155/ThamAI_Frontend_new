@@ -1,198 +1,124 @@
-/* === RESET === */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  font-family: "Segoe UI", sans-serif;
-}
-
-/* === TOÀN TRANG === */
 body {
-  background: linear-gradient(135deg, #dfe9f3 0%, #ffffff 100%);
-  min-height: 100vh;
+  font-family: "Segoe UI", sans-serif;
+  background: linear-gradient(180deg, #eaf1fb, #ffffff);
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
+  min-height: 100vh;
+  margin: 0;
 }
 
-/* === KHUNG CHÍNH === */
-#app {
-  width: 420px;
-  background: #ffffff;
+.app-container {
+  width: 90%;
+  max-width: 600px;
+  background: white;
   border-radius: 16px;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  margin-top: 30px;
+  padding: 20px;
 }
 
-/* === TIÊU ĐỀ === */
 header {
-  background: linear-gradient(90deg, #4a90e2, #6ec6ff);
-  color: white;
   text-align: center;
-  padding: 14px;
-  font-size: 1.2rem;
+  background: linear-gradient(to right, #3b82f6, #60a5fa);
+  color: white;
+  padding: 15px;
+  border-radius: 10px;
+  margin-bottom: 15px;
+}
+
+header span {
+  font-weight: bold;
+  color: #ffeb3b;
+}
+
+.controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.controls label {
   font-weight: 600;
-  letter-spacing: 0.5px;
-}
-
-/* === KHUNG CHAT === */
-#chat-box {
-  flex: 1;
-  padding: 16px;
-  overflow-y: auto;
-  scroll-behavior: smooth;
-}
-
-/* === TIN NHẮN === */
-.message {
-  margin-bottom: 14px;
-  display: flex;
-  flex-direction: column;
-  max-width: 85%;
-}
-
-.message.user {
-  align-self: flex-end;
-  background: #e6f3ff;
-  border-radius: 12px 12px 0 12px;
-  padding: 10px 14px;
-  color: #333;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-}
-
-.message.bot {
-  align-self: flex-start;
-  background: #f1f1f1;
-  border-radius: 12px 12px 12px 0;
-  padding: 10px 14px;
-  color: #222;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-}
-
-/* === KHU VỰC NHẬP LIỆU === */
-#input-area {
-  display: flex;
-  align-items: center;
-  border-top: 1px solid #ddd;
-  padding: 10px;
-  background: #fafafa;
-}
-
-#user-input {
-  flex: 1;
-  border: 1px solid #ccc;
-  border-radius: 10px;
-  padding: 8px 12px;
-  outline: none;
-  font-size: 0.95rem;
-  transition: border-color 0.2s;
-}
-
-#user-input:focus {
-  border-color: #4a90e2;
-}
-
-/* === NÚT GỬI + GHI ÂM === */
-button {
-  margin-left: 8px;
-  border: none;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: background 0.2s, transform 0.1s;
-}
-
-#send-btn {
-  background: #4a90e2;
-  color: white;
-  padding: 8px 14px;
-}
-
-#send-btn:hover {
-  background: #2f6fd4;
-  transform: scale(1.05);
-}
-
-#record-btn {
-  background: #ff5c5c;
-  color: white;
-  padding: 8px 12px;
-}
-
-#record-btn.recording {
-  background: #d32f2f;
-  animation: pulse 1s infinite;
-}
-
-/* Hiệu ứng khi ghi âm */
-@keyframes pulse {
-  0% {
-    box-shadow: 0 0 0 0 rgba(255, 92, 92, 0.7);
-  }
-  70% {
-    box-shadow: 0 0 0 10px rgba(255, 92, 92, 0);
-  }
-  100% {
-    box-shadow: 0 0 0 0 rgba(255, 92, 92, 0);
-  }
-}
-
-/* === MENU CÀI ĐẶT === */
-#controls {
-  display: flex;
-  justify-content: space-around;
-  align-items: center;
-  background: #f9f9f9;
-  border-top: 1px solid #ddd;
-  padding: 8px 10px;
 }
 
 select {
-  border: 1px solid #ccc;
+  padding: 6px 10px;
   border-radius: 8px;
-  padding: 4px 8px;
-  font-size: 0.9rem;
-  background: white;
+  border: 1px solid #ccc;
+}
+
+.chat-box {
+  height: 350px;
+  overflow-y: auto;
+  background: #f8fafc;
+  border-radius: 10px;
+  padding: 10px;
+  border: 1px solid #ddd;
+}
+
+.message {
+  margin: 8px 0;
+  padding: 8px 12px;
+  border-radius: 10px;
+  line-height: 1.4;
+}
+
+.user {
+  background: #d1e7ff;
+  align-self: flex-end;
+  text-align: right;
+}
+
+.bot {
+  background: #e8f5e9;
+  text-align: left;
+}
+
+.input-area {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.input-area input {
+  flex: 1;
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
+
+.input-area button {
+  border: none;
+  border-radius: 8px;
+  padding: 8px 12px;
   cursor: pointer;
-  transition: border-color 0.2s;
+  color: white;
+  font-weight: 600;
 }
 
-select:hover {
-  border-color: #4a90e2;
-}
+#sendBtn { background-color: #2563eb; }
+#recordBtn { background-color: #16a34a; }
+#clearBtn { background-color: #6b7280; }
 
-/* === TRẠNG THÁI NÓI === */
-#speaking-status {
+.status-area {
   text-align: center;
-  font-size: 0.9rem;
-  padding: 6px;
-  color: #555;
-  min-height: 24px;
+  margin-top: 10px;
+  color: #374151;
+  font-style: italic;
 }
 
 .speaking {
-  color: #4a90e2;
-  animation: blink 1s infinite;
+  animation: pulse 1s infinite;
+  color: #16a34a;
+  font-weight: bold;
 }
 
-@keyframes blink {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.4;
-  }
-}
-
-/* === THANH CUỘN === */
-#chat-box::-webkit-scrollbar {
-  width: 6px;
-}
-#chat-box::-webkit-scrollbar-thumb {
-  background: #ccc;
-  border-radius: 3px;
-}
-#chat-box::-webkit-scrollbar-thumb:hover {
-  background: #aaa;
+@keyframes pulse {
+  0% { opacity: 0.5; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.1); }
+  100% { opacity: 0.5; transform: scale(1); }
 }

@@ -1,200 +1,153 @@
-// =================== CẤU HÌNH CƠ BẢN ===================
-const backendURL = "https://thamai-backend-new.onrender.com"; // URL backend Flask của anh
-const chatBox = document.getElementById("chat-box");
-const userInput = document.getElementById("user-input");
-const sendBtn = document.getElementById("send-btn");
-const recordBtn = document.getElementById("record-btn");
-const voiceSelect = document.getElementById("voice-select");
-const speedSelect = document.getElementById("speed-select");
-const emotionSelect = document.getElementById("emotion-select");
-const speakingStatus = document.getElementById("speaking-status");
+const chatBox = document.getElementById("chatBox");
+const userInput = document.getElementById("userInput");
+const sendBtn = document.getElementById("sendBtn");
+const recordBtn = document.getElementById("recordBtn");
+const clearBtn = document.getElementById("clearBtn");
+const statusArea = document.getElementById("statusArea");
+const voiceSelect = document.getElementById("voiceSelect");
+const speedSelect = document.getElementById("speedSelect");
+const emotionSelect = document.getElementById("emotionSelect");
 
-let isSpeaking = false;
+let recognition;
 let isRecording = false;
-let mediaRecorder = null;
-let audioChunks = [];
-let autoAskTimeout = null;
+let isSpeaking = false;
 
-// =================== HIỂN THỊ TIN NHẮN ===================
-function addMessage(sender, text) {
+// ✅ Tải danh sách giọng nói
+function loadVoices() {
+  const voices = speechSynthesis.getVoices();
+  voiceSelect.innerHTML = "";
+  voices.forEach((v, i) => {
+    const opt = document.createElement("option");
+    opt.value = i;
+    opt.textContent = `${v.name} (${v.lang})`;
+    voiceSelect.appendChild(opt);
+  });
+}
+window.speechSynthesis.onvoiceschanged = loadVoices;
+
+// ✅ Hiển thị tin nhắn
+function appendMessage(sender, text) {
   const msg = document.createElement("div");
-  msg.className = `msg ${sender}`;
+  msg.classList.add("message", sender);
   msg.textContent = text;
   chatBox.appendChild(msg);
   chatBox.scrollTop = chatBox.scrollHeight;
 }
 
-// =================== GỬI TIN NHẮN VĂN BẢN ===================
+// ✅ Gửi tin nhắn văn bản
 async function sendMessage() {
   const text = userInput.value.trim();
   if (!text) return;
 
-  addMessage("user", text);
+  appendMessage("user", text);
   userInput.value = "";
-
-  addMessage("ai", "⏳ Đang trả lời...");
+  statusArea.textContent = "⏳ Đang xử lý...";
 
   try {
-    const res = await fetch(`${backendURL}/chat`, {
+    const res = await fetch("https://thamai-backend-new.onrender.com/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ message: text }),
     });
-
     const data = await res.json();
-    const reply = data.reply || "Xin lỗi, tôi chưa hiểu ý anh.";
-    addMessage("ai", reply);
-    speak(reply);
-  } catch (err) {
-    console.error("Lỗi chat:", err);
-    addMessage("ai", "⚠️ Lỗi khi gửi yêu cầu tới server.");
+    appendMessage("bot", data.reply);
+    speakResponse(data.reply);
+  } catch {
+    appendMessage("bot", "⚠️ Lỗi kết nối máy chủ!");
+  } finally {
+    statusArea.textContent = "";
   }
 }
 
+// ✅ Nói phản hồi bằng TTS
+function speakResponse(text) {
+  const utterance = new SpeechSynthesisUtterance(text);
+  const voices = speechSynthesis.getVoices();
+  const selectedVoice = voices[voiceSelect.value] || voices[0];
+  utterance.voice = selectedVoice;
+  utterance.rate = parseFloat(speedSelect.value);
+
+  // Cảm xúc
+  const emotion = emotionSelect.value;
+  if (emotion === "auto") {
+    if (text.includes("chào") || text.includes("vui")) utterance.rate += 0.1;
+  } else if (emotion === "vui") utterance.rate += 0.15;
+  else if (emotion === "nghiem") utterance.rate -= 0.1;
+  else if (emotion === "nhe") utterance.rate -= 0.05;
+
+  utterance.onstart = () => {
+    isSpeaking = true;
+    statusArea.textContent = "🔊 Đang nói...";
+    statusArea.classList.add("speaking");
+  };
+  utterance.onend = () => {
+    isSpeaking = false;
+    statusArea.textContent = "";
+    statusArea.classList.remove("speaking");
+    setTimeout(() => {
+      if (!isRecording) speakResponse("Anh còn muốn hỏi thêm gì không?");
+    }, 5000);
+  };
+
+  speechSynthesis.speak(utterance);
+}
+
+// ✅ Ghi âm giọng nói (Whisper)
+recordBtn.addEventListener("click", async () => {
+  if (isSpeaking) {
+    speechSynthesis.cancel();
+    statusArea.textContent = "🛑 Đã tắt giọng nói để ghi âm.";
+  }
+
+  if (isRecording) {
+    recognition.stop();
+    isRecording = false;
+    recordBtn.textContent = "🎤 Ghi âm";
+    statusArea.textContent = "Đã dừng ghi âm.";
+    return;
+  }
+
+  if (!("webkitSpeechRecognition" in window)) {
+    alert("Trình duyệt không hỗ trợ ghi âm!");
+    return;
+  }
+
+  recognition = new webkitSpeechRecognition();
+  recognition.lang = "vi-VN";
+  recognition.interimResults = false;
+  recognition.continuous = false;
+
+  recognition.onstart = () => {
+    isRecording = true;
+    recordBtn.textContent = "⏹ Dừng";
+    statusArea.textContent = "🎙️ Đang ghi âm...";
+  };
+
+  recognition.onresult = (e) => {
+    const transcript = e.results[0][0].transcript;
+    userInput.value = transcript;
+    sendMessage();
+  };
+
+  recognition.onerror = () => {
+    statusArea.textContent = "⚠️ Lỗi ghi âm!";
+  };
+
+  recognition.onend = () => {
+    isRecording = false;
+    recordBtn.textContent = "🎤 Ghi âm";
+  };
+
+  recognition.start();
+});
+
+// ✅ Sự kiện gửi
 sendBtn.addEventListener("click", sendMessage);
 userInput.addEventListener("keypress", (e) => {
   if (e.key === "Enter") sendMessage();
 });
 
-// =================== PHÁT GIỌNG NÓI (TTS) ===================
-function speak(text) {
-  if (!window.speechSynthesis) {
-    addMessage("ai", "⚠️ Trình duyệt không hỗ trợ phát giọng nói.");
-    return;
-  }
-
-  window.speechSynthesis.cancel(); // đảm bảo không bị đè giọng
-  const utterance = new SpeechSynthesisUtterance(text);
-
-  // Giọng
-  const voices = window.speechSynthesis.getVoices();
-  if (voiceSelect.value === "male") {
-    utterance.voice = voices.find(v => v.name.toLowerCase().includes("male")) || voices[0];
-  } else if (voiceSelect.value === "female") {
-    utterance.voice = voices.find(v => v.name.toLowerCase().includes("female")) || voices[0];
-  }
-
-  // Tốc độ
-  utterance.rate = speedSelect.value === "slow" ? 0.9 :
-                   speedSelect.value === "fast" ? 1.3 : 1.0;
-
-  // Cảm xúc (tự động hoặc thủ công)
-  const emotion = emotionSelect.value;
-  if (emotion === "auto") {
-    if (text.includes("!")) {
-      utterance.pitch = 1.3; utterance.rate += 0.2;
-    } else if (text.includes("?")) {
-      utterance.pitch = 1.1;
-    } else {
-      utterance.pitch = 1.0;
-    }
-  } else if (emotion === "happy") {
-    utterance.pitch = 1.3; utterance.rate += 0.2;
-  } else if (emotion === "calm") {
-    utterance.pitch = 0.9; utterance.rate -= 0.1;
-  } else if (emotion === "serious") {
-    utterance.pitch = 0.8; utterance.rate = 0.9;
-  }
-
-  // Sự kiện hiển thị
-  utterance.onstart = () => {
-    isSpeaking = true;
-    speakingStatus.innerHTML = "🔊 Đang nói...";
-  };
-  utterance.onend = () => {
-    isSpeaking = false;
-    speakingStatus.innerHTML = "";
-    clearTimeout(autoAskTimeout);
-    autoAskTimeout = setTimeout(() => {
-      if (!isRecording) speak("Anh còn muốn hỏi thêm gì không?");
-    }, 6000);
-  };
-
-  window.speechSynthesis.speak(utterance);
-}
-
-// =================== GHI ÂM VÀ GỬI LÊN BACKEND ===================
-recordBtn.addEventListener("click", async () => {
-  if (isRecording) {
-    // Dừng ghi
-    if (mediaRecorder && mediaRecorder.state === "recording") {
-      mediaRecorder.stop();
-    }
-    return;
-  }
-
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    mediaRecorder = new MediaRecorder(stream);
-
-    audioChunks = [];
-    mediaRecorder.ondataavailable = (e) => {
-      if (e.data && e.data.size > 0) audioChunks.push(e.data);
-    };
-
-    mediaRecorder.onstart = () => {
-      isRecording = true;
-      recordBtn.textContent = "⏹️ Dừng";
-      if (window.speechSynthesis.speaking) window.speechSynthesis.cancel();
-      addMessage("ai", "🎧 Đang ghi âm...");
-    };
-
-    mediaRecorder.onstop = async () => {
-      isRecording = false;
-      recordBtn.textContent = "🎤 Ghi âm";
-      addMessage("ai", "⏳ Đang xử lý âm thanh...");
-
-      const blob = new Blob(audioChunks, { type: "audio/webm" });
-      const fd = new FormData();
-      fd.append("audio", blob, "recording.webm");
-
-      try {
-        const resp = await fetch(`${backendURL}/speech-to-text`, {
-          method: "POST",
-          body: fd,
-        });
-
-        if (!resp.ok) {
-          const txt = await resp.text();
-          console.error("speech-to-text server error:", resp.status, txt);
-          addMessage("ai", `⚠️ Lỗi server STT: ${resp.status}`);
-          return;
-        }
-
-        const data = await resp.json();
-        const recognized = data.text ?? data.transcript ?? "";
-        if (!recognized) {
-          addMessage("ai", "⚠️ Không nhận diện được giọng nói.");
-          return;
-        }
-
-        addMessage("user", recognized);
-
-        const chatRes = await fetch(`${backendURL}/chat`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: recognized }),
-        });
-        const chatData = await chatRes.json();
-        const reply = chatData.reply || "Xin lỗi, tôi chưa hiểu.";
-        addMessage("ai", reply);
-        speak(reply);
-      } catch (err) {
-        console.error("Lỗi gửi audio:", err);
-        addMessage("ai", "⚠️ Lỗi khi gửi âm thanh lên server.");
-      }
-    };
-
-    mediaRecorder.start();
-  } catch (err) {
-    console.error("Không thể mở micro:", err);
-    addMessage("ai", "❌ Không thể truy cập micro. Vui lòng kiểm tra quyền micro.");
-  }
+// ✅ Xóa hội thoại
+clearBtn.addEventListener("click", () => {
+  chatBox.innerHTML = "";
 });
-
-// =================== KHỞI TẠO ===================
-window.speechSynthesis.onvoiceschanged = () => {
-  console.log("Đã tải danh sách giọng:", window.speechSynthesis.getVoices());
-};
-
-addMessage("ai", "🤖 Xin chào! Tôi là ThamAI – Trợ lý ảo của anh Thắm.");
