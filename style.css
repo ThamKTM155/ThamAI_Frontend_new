@@ -1,0 +1,139 @@
+body {
+    font-family: 'Segoe UI', sans-serif;
+    background-color: #e8edf2;
+    margin: 0;
+    padding: 0;
+}
+
+.app-container {
+    max-width: 700px;
+    margin: 40px auto;
+    background: #fff;
+    border-radius: 15px;
+    box-shadow: 0 0 15px rgba(0,0,0,0.1);
+    padding: 20px;
+}
+
+header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #2266cc;
+    color: white;
+    padding: 10px;
+    border-radius: 10px;
+}
+
+header .logo {
+    width: 40px;
+    margin-right: 10px;
+}
+
+.control-panel {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 15px;
+    flex-wrap: wrap;
+}
+
+.select-group {
+    display: flex;
+    align-items: center;
+    margin: 5px 0;
+}
+
+.select-group label {
+    margin-right: 5px;
+    font-weight: 500;
+}
+
+.chat-box {
+    height: 350px;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    padding: 10px;
+    overflow-y: auto;
+    margin-top: 10px;
+    background: #f9f9f9;
+}
+
+.message {
+    margin: 10px 0;
+    display: flex;
+    align-items: flex-start;
+}
+
+.user-msg {
+    justify-content: flex-end;
+}
+
+.message span {
+    padding: 8px 12px;
+    border-radius: 15px;
+    max-width: 70%;
+    word-wrap: break-word;
+}
+
+.user-msg span {
+    background-color: #d1e7ff;
+    color: #000;
+}
+
+.ai-msg span {
+    background-color: #e6f5e6;
+    color: #000;
+}
+
+.input-section {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 15px;
+    flex-wrap: wrap;
+}
+
+input[type="text"] {
+    flex: 1;
+    padding: 10px;
+    border-radius: 10px;
+    border: 1px solid #ccc;
+    margin-right: 10px;
+}
+
+button {
+    padding: 10px 15px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+#sendBtn {
+    background-color: #2266cc;
+    color: white;
+}
+
+#recordBtn {
+    background-color: #00897b;
+    color: white;
+}
+
+#clearBtn {
+    background-color: #888;
+    color: white;
+}
+
+button:hover {
+    opacity: 0.9;
+}
+
+.speaking-indicator {
+    margin-top: 10px;
+    text-align: center;
+    font-style: italic;
+    color: #2266cc;
+    font-weight: 600;
+}
+
+.hidden {
+    display: none;
+}
