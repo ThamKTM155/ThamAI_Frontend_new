@@ -121,15 +121,29 @@ async function sendAudioToBackend(audioBlob) {
 
 // ==================== PHÁT ÂM THANH (TTS – TEXT TO SPEECH) ====================
 function speakText(text) {
-  if (!window.speechSynthesis) {
-    console.warn("Trình duyệt không hỗ trợ TTS.");
-    return;
-  }
+    if (!window.speechSynthesis) {
+        console.warn("Trình duyệt không hỗ trợ giọng nói.");
+        return;
+    }
 
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = "vi-VN";
-  utterance.rate = 1;
-  utterance.pitch = 1;
-  utterance.volume = 1;
-  speechSynthesis.speak(utterance);
+    const utterance = new SpeechSynthesisUtterance(text);
+
+    // 🗣️ Cấu hình giọng nói
+    utterance.lang = "vi-VN";  // Tiếng Việt
+    utterance.pitch = 1.0;     // Cao độ tự nhiên
+    utterance.rate = 0.9;      // Tốc độ nói chậm lại
+    utterance.volume = 1.0;    // Âm lượng tối đa
+
+    // 🔍 Chọn giọng nữ Việt Nam nếu có
+    const voices = window.speechSynthesis.getVoices();
+    const vietnameseVoices = voices.filter(v => v.lang === "vi-VN");
+    if (vietnameseVoices.length > 0) {
+        // Ưu tiên giọng nữ
+        const femaleVoice = vietnameseVoices.find(v => v.name.toLowerCase().includes("female") || v.name.toLowerCase().includes("woman"));
+        utterance.voice = femaleVoice || vietnameseVoices[0];
+    }
+
+    // 🎧 Phát âm thanh
+    speechSynthesis.cancel(); // Hủy giọng cũ (nếu đang nói)
+    speechSynthesis.speak(utterance);
 }
