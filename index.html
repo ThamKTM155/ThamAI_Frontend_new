@@ -1,41 +1,25 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Trợ lý ThamAI</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ThamAI Assistant</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="app-container">
-    <header>
-      <h1>🤖 Trợ lý <span>ThamAI</span></h1>
-    </header>
+  <div class="chat-container">
+    <div class="header">🤖 Trợ lý ThamAI</div>
 
-    <div class="controls">
-      <label for="voiceSelect">Giọng:</label>
-      <select id="voiceSelect"></select>
-
-      <label for="speedSelect">Tốc độ:</label>
-      <select id="speedSelect">
-        <option value="0.8">Chậm</option>
-        <option value="1" selected>Vừa</option>
-        <option value="1.3">Nhanh</option>
-      </select>
-
-      <label for="emotionSelect">Cảm xúc:</label>
-      <select id="emotionSelect">
-        <option value="auto" selected>Tự động</option>
-        <option value="vui">Vui</option>
-        <option value="nghiem">Nghiêm</option>
-        <option value="nhe">Nhẹ nhàng</option>
-      </select>
-    </div>
-
-    <main id="chatBox" class="chat-box"></main>
+    <div id="chat-box" class="chat-box"></div>
 
     <div class="input-area">
-      <input type="text" id="userInput" placeholder="Nhập tin nhắn..." />
-      <button id="sendBtn">Gửi</button>
-      <button id="recordBtn">🎤 Ghi âm</button>
-      <button id="clearBtn"
+      <input type="text" id="user-input" placeholder="Nhập tin nhắn...">
+      <button id="send-btn">Gửi</button>
+      <button id="mic-btn">🎤</button>
+      <button id="speak-btn">🔊</button>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
