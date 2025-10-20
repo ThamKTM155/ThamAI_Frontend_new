@@ -1,129 +1,135 @@
-// === Cấu hình địa chỉ backend ===
+// ==================== CẤU HÌNH CƠ BẢN ====================
 const BACKEND_URL = "https://thamai-backend-new.onrender.com";
 
-// === Các phần tử HTML ===
 const chatBox = document.getElementById("chat-box");
 const userInput = document.getElementById("user-input");
 const sendBtn = document.getElementById("send-btn");
 const recordBtn = document.getElementById("record-btn");
 
+let isRecording = false;
 let mediaRecorder;
 let audioChunks = [];
-let isRecording = false;
 
-// === Hiển thị tin nhắn trong khung chat ===
+// ==================== HÀM HIỂN THỊ TIN NHẮN ====================
 function appendMessage(sender, text) {
-  const message = document.createElement("div");
-  message.className = sender === "user" ? "message user" : "message ai";
-  message.textContent = text;
-  chatBox.appendChild(message);
+  const msg = document.createElement("div");
+  msg.classList.add("message", sender);
+  msg.textContent = text;
+  chatBox.appendChild(msg);
   chatBox.scrollTop = chatBox.scrollHeight;
 }
 
-// === Gửi tin nhắn văn bản ===
-async function sendMessage() {
-  const message = userInput.value.trim();
-  if (!message) return;
-
-  appendMessage("user", message);
-  userInput.value = "";
+// ==================== GỬI VĂN BẢN TỚI BACKEND ====================
+async function sendTextToBackend(text) {
+  appendMessage("user", text);
 
   try {
-    const response = await fetch(`${BACKEND_URL}/chat`, {
+    const res = await fetch(`${BACKEND_URL}/chat`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message }),
+      body: JSON.stringify({ message: text }),
     });
 
-    const data = await response.json();
+    const data = await res.json();
 
-    if (response.ok) {
+    if (data && data.reply) {
       appendMessage("ai", data.reply);
+      speakText(data.reply); // GỌI TTS NGAY KHI AI TRẢ LỜI
     } else {
-      appendMessage("ai", "⚠️ Lỗi phản hồi từ server: " + (data.error || "Không rõ"));
+      appendMessage("ai", "⚠️ Không nhận được phản hồi từ máy chủ.");
     }
-  } catch (error) {
-    appendMessage("ai", "⚠️ Không thể kết nối tới server.");
-    console.error("Lỗi khi gửi chat:", error);
+  } catch (err) {
+    console.error(err);
+    appendMessage("ai", "⚠️ Lỗi kết nối với backend.");
   }
 }
 
-// === Ghi âm giọng nói ===
+// ==================== XỬ LÝ NÚT GỬI VĂN BẢN ====================
+sendBtn.addEventListener("click", () => {
+  const text = userInput.value.trim();
+  if (text) {
+    sendTextToBackend(text);
+    userInput.value = "";
+  }
+});
+
+userInput.addEventListener("keypress", (e) => {
+  if (e.key === "Enter") {
+    sendBtn.click();
+  }
+});
+
+// ==================== GHI ÂM & GỬI ÂM THANH TỚI BACKEND (WHISPER) ====================
 recordBtn.addEventListener("click", async () => {
   if (!isRecording) {
+    // Bắt đầu ghi âm
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       mediaRecorder = new MediaRecorder(stream);
       audioChunks = [];
 
       mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          audioChunks.push(event.data);
-        }
+        audioChunks.push(event.data);
       };
 
       mediaRecorder.onstop = async () => {
-        const audioBlob = new Blob(audioChunks, { type: "audio/wav" });
+        const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
         await sendAudioToBackend(audioBlob);
       };
 
       mediaRecorder.start();
       isRecording = true;
-      recordBtn.textContent = "🛑 Dừng ghi";
-      appendMessage("ai", "🎤 Đang ghi âm, hãy nói gì đó...");
+      recordBtn.textContent = "⏹️ Dừng";
+      appendMessage("ai", "🎙️ Đang nghe...");
     } catch (err) {
-      console.error("Lỗi ghi âm:", err);
-      appendMessage("ai", "❌ Không thể truy cập micro!");
+      console.error("Không thể ghi âm:", err);
+      appendMessage("ai", "❌ Trình duyệt không cho phép ghi âm.");
     }
   } else {
+    // Dừng ghi âm
     mediaRecorder.stop();
     isRecording = false;
     recordBtn.textContent = "🎙️ Ghi âm";
+    appendMessage("ai", "⏳ Đang xử lý âm thanh...");
   }
 });
 
-// === Gửi audio đến backend (Whisper HuggingFace) ===
+// ==================== GỬI ÂM THANH LÊN BACKEND (Whisper miễn phí HuggingFace) ====================
 async function sendAudioToBackend(audioBlob) {
-  try {
-    const formData = new FormData();
-    formData.append("audio", audioBlob, "voice.wav");
+  const formData = new FormData();
+  formData.append("file", audioBlob, "speech.webm");
 
-    const response = await fetch(`${BACKEND_URL}/speech-to-text`, {
+  try {
+    const res = await fetch(`${BACKEND_URL}/speech-to-text`, {
       method: "POST",
       body: formData,
     });
 
-    const data = await response.json();
+    const data = await res.json();
 
-    if (response.ok) {
-      const text = data.text || "(Không nhận dạng được)";
-      appendMessage("user", "🎧 " + text);
-
-      // Sau khi có text → gọi lại /chat để AI phản hồi
-      const chatResponse = await fetch(`${BACKEND_URL}/chat`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text }),
-      });
-
-      const chatData = await chatResponse.json();
-      if (chatResponse.ok) {
-        appendMessage("ai", chatData.reply);
-      } else {
-        appendMessage("ai", "⚠️ Lỗi khi phản hồi giọng nói.");
-      }
+    if (data && data.text) {
+      appendMessage("user", `🗣️ ${data.text}`);
+      sendTextToBackend(data.text);
     } else {
-      appendMessage("ai", "⚠️ Lỗi server: " + (data.error || "Không rõ"));
-      console.error("Server error:", data);
+      appendMessage("ai", "⚠️ Không thể nhận diện giọng nói.");
     }
-  } catch (error) {
-    appendMessage("ai", "⚠️ Không gửi được âm thanh tới server!");
-    console.error("Lỗi khi gửi audio:", error);
+  } catch (err) {
+    console.error("Lỗi gửi audio:", err);
+    appendMessage("ai", "⚠️ Lỗi khi gửi âm thanh lên server.");
   }
 }
 
-// === Gửi khi nhấn Enter hoặc nút gửi ===
-sendBtn.addEventListener("click", sendMessage);
-userInput.addEventListener("keydown", (e) => {
-  if (e.key === "Enter") sendMessage();
-});
+// ==================== PHÁT ÂM THANH (TTS – TEXT TO SPEECH) ====================
+function speakText(text) {
+  if (!window.speechSynthesis) {
+    console.warn("Trình duyệt không hỗ trợ TTS.");
+    return;
+  }
+
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = "vi-VN";
+  utterance.rate = 1;
+  utterance.pitch = 1;
+  utterance.volume = 1;
+  speechSynthesis.speak(utterance);
+}
