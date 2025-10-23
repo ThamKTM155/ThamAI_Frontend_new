@@ -8,6 +8,7 @@ const audioPlayer = document.getElementById("audio-player");
 
 let mediaRecorder;
 let audioChunks = [];
+let lastBotReply = "";
 
 // ----------------------
 // Gửi tin nhắn Chat
@@ -40,7 +41,7 @@ sendBtn.addEventListener("click", async () => {
 });
 
 // ----------------------
-// Ghi âm → Whisper
+// Ghi âm → Whisper (Speech-to-Text)
 // ----------------------
 recordBtn.addEventListener("click", async () => {
   if (mediaRecorder && mediaRecorder.state === "recording") {
@@ -84,10 +85,8 @@ recordBtn.addEventListener("click", async () => {
 });
 
 // ----------------------
-// TTS - Text → Giọng nói
+// TTS - Text → Giọng nói (Speech synthesis)
 // ----------------------
-let lastBotReply = "";
-
 speakBtn.addEventListener("click", async () => {
   if (!lastBotReply) {
     alert("Chưa có nội dung để ThamAI nói.");
@@ -101,15 +100,30 @@ speakBtn.addEventListener("click", async () => {
       body: JSON.stringify({ text: lastBotReply }),
     });
 
-    if (!res.ok) throw new Error("Lỗi phát âm thanh");
+    if (!res.ok) {
+      appendMessage("bot", "⚠️ Lỗi khi yêu cầu phát âm thanh.");
+      return;
+    }
 
-    const audioBlob = await res.blob();
-    const audioUrl = URL.createObjectURL(audioBlob);
+    // ✅ Đọc dữ liệu dưới dạng blob để phát âm thanh
+    const blob = await res.blob();
+
+    // Kiểm tra loại MIME (đề phòng Render trả về HTML)
+    if (blob.type !== "audio/mpeg") {
+      const text = await blob.text();
+      console.error("Phản hồi không hợp lệ:", text);
+      appendMessage("bot", "⚠️ Máy chủ chưa trả về âm thanh hợp lệ.");
+      return;
+    }
+
+    const audioUrl = URL.createObjectURL(blob);
     audioPlayer.src = audioUrl;
     audioPlayer.hidden = false;
-    audioPlayer.play();
+    audioPlayer.play().catch(err => console.error("Lỗi khi phát âm thanh:", err));
+
   } catch (err) {
     alert("⚠️ Không thể phát âm thanh: " + err.message);
+    console.error(err);
   }
 });
 
