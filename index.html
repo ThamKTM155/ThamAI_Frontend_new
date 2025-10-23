@@ -7,17 +7,21 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="chat-container">
-    <div class="header">🤖 Trợ lý ThamAI</div>
+  <div class="app-container">
+    <h1>🤖 ThamAI Assistant</h1>
 
     <div id="chat-box" class="chat-box"></div>
 
-    <div class="input-area">
-      <input type="text" id="user-input" placeholder="Nhập tin nhắn...">
-      <button id="send-btn">Gửi</button>
-      <button id="mic-btn">🎤</button>
-      <button id="speak-btn">🔊</button>
+    <div class="input-section">
+      <textarea id="user-input" placeholder="Nhập tin nhắn..." rows="2"></textarea>
+      <div class="button-group">
+        <button id="send-btn">💬 Gửi</button>
+        <button id="record-btn">🎤 Ghi âm</button>
+        <button id="speak-btn">🔊 ThamAI nói</button>
+      </div>
     </div>
+
+    <audio id="audio-player" controls hidden></audio>
   </div>
 
   <script src="script.js"></script>

@@ -1,46 +1,51 @@
-const BACKEND_URL = "https://thamai-backend-new.onrender.com";
+const API_BASE = "https://thamai-backend-new.onrender.com";
 const chatBox = document.getElementById("chat-box");
 const userInput = document.getElementById("user-input");
 const sendBtn = document.getElementById("send-btn");
 const recordBtn = document.getElementById("record-btn");
 const speakBtn = document.getElementById("speak-btn");
+const audioPlayer = document.getElementById("audio-player");
 
-let mediaRecorder, audioChunks = [];
+let mediaRecorder;
+let audioChunks = [];
 
-// ---------------------
-// 1️⃣ Gửi tin nhắn văn bản
-// ---------------------
-sendBtn.onclick = async () => {
-  const text = userInput.value.trim();
-  if (!text) return;
+// ----------------------
+// Gửi tin nhắn Chat
+// ----------------------
+sendBtn.addEventListener("click", async () => {
+  const message = userInput.value.trim();
+  if (!message) return;
 
-  addMessage("user", text);
+  appendMessage("user", message);
   userInput.value = "";
 
   try {
-    const response = await fetch(`${BACKEND_URL}/chat`, {
+    const res = await fetch(`${API_BASE}/chat`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: text }),
+      body: JSON.stringify({ message }),
     });
 
-    if (!response.ok) throw new Error("Lỗi khi gửi yêu cầu tới server");
-    const data = await response.json();
-
-    addMessage("assistant", data.reply || "(Không có phản hồi)");
+    const data = await res.json();
+    if (data.reply) {
+      appendMessage("bot", data.reply);
+      lastBotReply = data.reply;
+    } else {
+      appendMessage("bot", "❌ Lỗi phản hồi từ máy chủ.");
+    }
   } catch (err) {
-    addMessage("error", "❌ Không thể kết nối với máy chủ.");
+    appendMessage("bot", "⚠️ Không thể kết nối máy chủ backend.");
     console.error(err);
   }
-};
+});
 
-// ---------------------
-// 2️⃣ Ghi âm và gửi tới /whisper
-// ---------------------
-recordBtn.onclick = async () => {
+// ----------------------
+// Ghi âm → Whisper
+// ----------------------
+recordBtn.addEventListener("click", async () => {
   if (mediaRecorder && mediaRecorder.state === "recording") {
     mediaRecorder.stop();
-    recordBtn.innerHTML = "🎙️";
+    recordBtn.textContent = "🎤 Ghi âm";
     return;
   }
 
@@ -49,82 +54,71 @@ recordBtn.onclick = async () => {
     mediaRecorder = new MediaRecorder(stream);
     audioChunks = [];
 
-    mediaRecorder.ondataavailable = (e) => audioChunks.push(e.data);
-
+    mediaRecorder.ondataavailable = (event) => audioChunks.push(event.data);
     mediaRecorder.onstop = async () => {
-      const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
+      const audioBlob = new Blob(audioChunks, { type: "audio/wav" });
       const formData = new FormData();
-      formData.append("audio", audioBlob, "recording.webm");
+      formData.append("audio", audioBlob, "record.wav");
 
-      addMessage("user", "🎤 (Đang xử lý giọng nói...)");
+      appendMessage("user", "🎙️ (Đang gửi file ghi âm...)");
 
-      try {
-        const res = await fetch(`${BACKEND_URL}/whisper`, {
-          method: "POST",
-          body: formData,
-        });
-        const data = await res.json();
+      const res = await fetch(`${API_BASE}/whisper`, {
+        method: "POST",
+        body: formData,
+      });
 
-        if (data.text) {
-          addMessage("user", data.text);
-          const replyRes = await fetch(`${BACKEND_URL}/chat`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ message: data.text }),
-          });
-          const replyData = await replyRes.json();
-          addMessage("assistant", replyData.reply || "(Không có phản hồi)");
-        } else {
-          addMessage("error", "❌ Không nhận diện được giọng nói.");
-        }
-      } catch (err) {
-        addMessage("error", "❌ Lỗi khi gửi âm thanh đến server.");
-        console.error(err);
+      const data = await res.json();
+      if (data.text) {
+        appendMessage("user", "🗣️ " + data.text);
+        userInput.value = data.text;
+      } else {
+        appendMessage("bot", "❌ Không nhận dạng được giọng nói.");
       }
     };
 
     mediaRecorder.start();
-    recordBtn.innerHTML = "⏹️";
+    recordBtn.textContent = "⏹️ Dừng";
   } catch (err) {
-    addMessage("error", "❌ Không thể truy cập micro.");
-    console.error(err);
+    alert("Không thể truy cập micro: " + err.message);
   }
-};
+});
 
-// ---------------------
-// 3️⃣ Gửi văn bản để phát âm thật
-// ---------------------
-speakBtn.onclick = async () => {
-  const lastAssistantMsg = [...chatBox.querySelectorAll(".assistant")].pop();
-  if (!lastAssistantMsg) return alert("Chưa có tin nhắn nào để đọc!");
+// ----------------------
+// TTS - Text → Giọng nói
+// ----------------------
+let lastBotReply = "";
 
-  const text = lastAssistantMsg.textContent;
+speakBtn.addEventListener("click", async () => {
+  if (!lastBotReply) {
+    alert("Chưa có nội dung để ThamAI nói.");
+    return;
+  }
 
   try {
-    const res = await fetch(`${BACKEND_URL}/speak`, {
+    const res = await fetch(`${API_BASE}/speak`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text }),
+      body: JSON.stringify({ text: lastBotReply }),
     });
 
-    if (!res.ok) throw new Error("Không thể phát âm từ server");
+    if (!res.ok) throw new Error("Lỗi phát âm thanh");
 
-    const blob = await res.blob();
-    const url = URL.createObjectURL(blob);
-    const audio = new Audio(url);
-    audio.play();
+    const audioBlob = await res.blob();
+    const audioUrl = URL.createObjectURL(audioBlob);
+    audioPlayer.src = audioUrl;
+    audioPlayer.hidden = false;
+    audioPlayer.play();
   } catch (err) {
-    addMessage("error", "❌ Lỗi khi phát âm thanh.");
-    console.error(err);
+    alert("⚠️ Không thể phát âm thanh: " + err.message);
   }
-};
+});
 
-// ---------------------
-// 4️⃣ Hàm hiển thị tin nhắn
-// ---------------------
-function addMessage(role, text) {
+// ----------------------
+// Hiển thị hội thoại
+// ----------------------
+function appendMessage(sender, text) {
   const msg = document.createElement("div");
-  msg.className = role;
+  msg.className = `message ${sender}`;
   msg.textContent = text;
   chatBox.appendChild(msg);
   chatBox.scrollTop = chatBox.scrollHeight;
