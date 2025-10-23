@@ -1,4 +1,8 @@
+// =============================
+// ⚙️ Cấu hình kết nối Backend
+// =============================
 const API_BASE = "https://thamai-backend-new.onrender.com";
+
 const chatBox = document.getElementById("chat-box");
 const userInput = document.getElementById("user-input");
 const sendBtn = document.getElementById("send-btn");
@@ -11,7 +15,26 @@ let audioChunks = [];
 let lastBotReply = "";
 
 // ----------------------
-// Gửi tin nhắn Chat
+// 🔄 Kiểm tra kết nối Backend khi khởi động
+// ----------------------
+async function checkBackend() {
+  try {
+    const res = await fetch(`${API_BASE}/test`);
+    const data = await res.json();
+    if (data.status === "ok") {
+      appendMessage("bot", "✅ Kết nối backend ThamAI thành công!");
+    } else {
+      appendMessage("bot", "⚠️ Backend phản hồi không đúng định dạng.");
+    }
+  } catch (err) {
+    appendMessage("bot", "❌ Không thể kết nối tới máy chủ backend.");
+    console.error("Lỗi kết nối:", err);
+  }
+}
+checkBackend();
+
+// ----------------------
+// 💬 Gửi tin nhắn Chat
 // ----------------------
 sendBtn.addEventListener("click", async () => {
   const message = userInput.value.trim();
@@ -40,8 +63,13 @@ sendBtn.addEventListener("click", async () => {
   }
 });
 
+// ✅ Gửi bằng phím Enter
+userInput.addEventListener("keypress", (e) => {
+  if (e.key === "Enter") sendBtn.click();
+});
+
 // ----------------------
-// Ghi âm → Whisper (Speech-to-Text)
+// 🎙️ Ghi âm → Whisper (Speech-to-Text)
 // ----------------------
 recordBtn.addEventListener("click", async () => {
   if (mediaRecorder && mediaRecorder.state === "recording") {
@@ -52,28 +80,35 @@ recordBtn.addEventListener("click", async () => {
 
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    mediaRecorder = new MediaRecorder(stream);
+    mediaRecorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
     audioChunks = [];
 
     mediaRecorder.ondataavailable = (event) => audioChunks.push(event.data);
+
     mediaRecorder.onstop = async () => {
-      const audioBlob = new Blob(audioChunks, { type: "audio/wav" });
+      const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
       const formData = new FormData();
-      formData.append("audio", audioBlob, "record.wav");
+      formData.append("file", audioBlob, "record.webm");
 
       appendMessage("user", "🎙️ (Đang gửi file ghi âm...)");
 
-      const res = await fetch(`${API_BASE}/whisper`, {
-        method: "POST",
-        body: formData,
-      });
+      try {
+        const res = await fetch(`${API_BASE}/whisper`, {
+          method: "POST",
+          body: formData,
+        });
 
-      const data = await res.json();
-      if (data.text) {
-        appendMessage("user", "🗣️ " + data.text);
-        userInput.value = data.text;
-      } else {
-        appendMessage("bot", "❌ Không nhận dạng được giọng nói.");
+        const data = await res.json();
+        if (data.text) {
+          appendMessage("user", "🗣️ " + data.text);
+          userInput.value = data.text;
+        } else {
+          appendMessage("bot", "❌ Không nhận dạng được giọng nói.");
+          console.error("Whisper error:", data);
+        }
+      } catch (err) {
+        appendMessage("bot", "⚠️ Lỗi khi gửi file ghi âm.");
+        console.error(err);
       }
     };
 
@@ -85,7 +120,7 @@ recordBtn.addEventListener("click", async () => {
 });
 
 // ----------------------
-// TTS - Text → Giọng nói (Speech synthesis)
+// 🔊 TTS - Text → Giọng nói
 // ----------------------
 speakBtn.addEventListener("click", async () => {
   if (!lastBotReply) {
@@ -105,13 +140,11 @@ speakBtn.addEventListener("click", async () => {
       return;
     }
 
-    // ✅ Đọc dữ liệu dưới dạng blob để phát âm thanh
     const blob = await res.blob();
 
-    // Kiểm tra loại MIME (đề phòng Render trả về HTML)
-    if (blob.type !== "audio/mpeg") {
-      const text = await blob.text();
-      console.error("Phản hồi không hợp lệ:", text);
+    if (!blob.type.startsWith("audio")) {
+      const txt = await blob.text();
+      console.error("Phản hồi không phải âm thanh:", txt);
       appendMessage("bot", "⚠️ Máy chủ chưa trả về âm thanh hợp lệ.");
       return;
     }
@@ -119,16 +152,16 @@ speakBtn.addEventListener("click", async () => {
     const audioUrl = URL.createObjectURL(blob);
     audioPlayer.src = audioUrl;
     audioPlayer.hidden = false;
-    audioPlayer.play().catch(err => console.error("Lỗi khi phát âm thanh:", err));
 
+    await audioPlayer.play();
   } catch (err) {
-    alert("⚠️ Không thể phát âm thanh: " + err.message);
+    appendMessage("bot", "⚠️ Không thể phát âm thanh.");
     console.error(err);
   }
 });
 
 // ----------------------
-// Hiển thị hội thoại
+// 💬 Hiển thị hội thoại
 // ----------------------
 function appendMessage(sender, text) {
   const msg = document.createElement("div");
