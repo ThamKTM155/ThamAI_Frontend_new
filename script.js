@@ -10,19 +10,19 @@ const recordBtn = document.getElementById("record-btn");
 const speakBtn = document.getElementById("speak-btn");
 const audioPlayer = document.getElementById("audio-player");
 
-let mediaRecorder;
+let mediaRecorder = null;
 let audioChunks = [];
 let lastBotReply = "";
 
 // ----------------------
-// 🔄 Kiểm tra kết nối Backend khi khởi động
+// 🔄 Kiểm tra kết nối Backend
 // ----------------------
 async function checkBackend() {
   try {
     const res = await fetch(`${API_BASE}/test`);
     const data = await res.json();
     if (data.status === "ok") {
-      appendMessage("bot", "✅ Kết nối backend ThamAI thành công!");
+      appendMessage("bot", data.message);
     } else {
       appendMessage("bot", "⚠️ Backend phản hồi không đúng định dạng.");
     }
@@ -63,13 +63,13 @@ sendBtn.addEventListener("click", async () => {
   }
 });
 
-// ✅ Gửi bằng phím Enter
+// ✅ Gửi bằng Enter
 userInput.addEventListener("keypress", (e) => {
   if (e.key === "Enter") sendBtn.click();
 });
 
 // ----------------------
-// 🎙️ Ghi âm → Whisper (Speech-to-Text)
+// 🎙️ Ghi âm → Whisper
 // ----------------------
 recordBtn.addEventListener("click", async () => {
   if (mediaRecorder && mediaRecorder.state === "recording") {
@@ -80,10 +80,12 @@ recordBtn.addEventListener("click", async () => {
 
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    mediaRecorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
+    mediaRecorder = new MediaRecorder(stream);
     audioChunks = [];
 
-    mediaRecorder.ondataavailable = (event) => audioChunks.push(event.data);
+    mediaRecorder.ondataavailable = (event) => {
+      if (event.data.size > 0) audioChunks.push(event.data);
+    };
 
     mediaRecorder.onstop = async () => {
       const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
@@ -93,10 +95,14 @@ recordBtn.addEventListener("click", async () => {
       appendMessage("user", "🎙️ (Đang gửi file ghi âm...)");
 
       try {
-        const res = await fetch(`${API_BASE}/whisper`, {
-          method: "POST",
-          body: formData,
-        });
+        const res = await fetch(`${API_BASE}/whisper`, { method: "POST", body: formData });
+
+        if (!res.ok) {
+          const errText = await res.text();
+          console.error("Whisper HTTP error:", res.status, errText);
+          appendMessage("bot", `⚠️ Whisper lỗi HTTP (${res.status}).`);
+          return;
+        }
 
         const data = await res.json();
         if (data.text) {
@@ -108,19 +114,20 @@ recordBtn.addEventListener("click", async () => {
         }
       } catch (err) {
         appendMessage("bot", "⚠️ Lỗi khi gửi file ghi âm.");
-        console.error(err);
+        console.error("Whisper fetch failed:", err);
       }
     };
 
     mediaRecorder.start();
-    recordBtn.textContent = "⏹️ Dừng";
+    recordBtn.textContent = "⏹️ Dừng ghi";
   } catch (err) {
     alert("Không thể truy cập micro: " + err.message);
+    console.error(err);
   }
 });
 
 // ----------------------
-// 🔊 TTS - Text → Giọng nói
+// 🔊 Speak - Text to Speech
 // ----------------------
 speakBtn.addEventListener("click", async () => {
   if (!lastBotReply) {
@@ -136,15 +143,16 @@ speakBtn.addEventListener("click", async () => {
     });
 
     if (!res.ok) {
+      const txt = await res.text();
+      console.error("TTS HTTP error:", res.status, txt);
       appendMessage("bot", "⚠️ Lỗi khi yêu cầu phát âm thanh.");
       return;
     }
 
     const blob = await res.blob();
-
     if (!blob.type.startsWith("audio")) {
       const txt = await blob.text();
-      console.error("Phản hồi không phải âm thanh:", txt);
+      console.error("TTS invalid response:", txt);
       appendMessage("bot", "⚠️ Máy chủ chưa trả về âm thanh hợp lệ.");
       return;
     }
@@ -152,8 +160,8 @@ speakBtn.addEventListener("click", async () => {
     const audioUrl = URL.createObjectURL(blob);
     audioPlayer.src = audioUrl;
     audioPlayer.hidden = false;
-
     await audioPlayer.play();
+
   } catch (err) {
     appendMessage("bot", "⚠️ Không thể phát âm thanh.");
     console.error(err);
