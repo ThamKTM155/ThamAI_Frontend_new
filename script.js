@@ -1,6 +1,4 @@
-// =============================
-// ⚙️ Cấu hình kết nối Backend
-// =============================
+// script.js - updated
 const API_BASE = "https://thamai-backend-new.onrender.com";
 
 const chatBox = document.getElementById("chat-box");
@@ -14,18 +12,13 @@ let mediaRecorder = null;
 let audioChunks = [];
 let lastBotReply = "";
 
-// ----------------------
-// 🔄 Kiểm tra kết nối Backend
-// ----------------------
+// check backend
 async function checkBackend() {
   try {
     const res = await fetch(`${API_BASE}/test`);
     const data = await res.json();
-    if (data.status === "ok") {
-      appendMessage("bot", data.message);
-    } else {
-      appendMessage("bot", "⚠️ Backend phản hồi không đúng định dạng.");
-    }
+    if (data.status === "ok") appendMessage("bot", "✅ Kết nối backend ThamAI thành công!");
+    else appendMessage("bot", "⚠️ Backend phản hồi không đúng định dạng.");
   } catch (err) {
     appendMessage("bot", "❌ Không thể kết nối tới máy chủ backend.");
     console.error("Lỗi kết nối:", err);
@@ -33,13 +26,10 @@ async function checkBackend() {
 }
 checkBackend();
 
-// ----------------------
-// 💬 Gửi tin nhắn Chat
-// ----------------------
+// chat
 sendBtn.addEventListener("click", async () => {
   const message = userInput.value.trim();
   if (!message) return;
-
   appendMessage("user", message);
   userInput.value = "";
 
@@ -49,28 +39,22 @@ sendBtn.addEventListener("click", async () => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ message }),
     });
-
     const data = await res.json();
     if (data.reply) {
       appendMessage("bot", data.reply);
       lastBotReply = data.reply;
     } else {
       appendMessage("bot", "❌ Lỗi phản hồi từ máy chủ.");
+      console.error("chat - unexpected:", data);
     }
   } catch (err) {
     appendMessage("bot", "⚠️ Không thể kết nối máy chủ backend.");
     console.error(err);
   }
 });
+userInput.addEventListener("keypress", (e) => { if (e.key === "Enter") sendBtn.click(); });
 
-// ✅ Gửi bằng Enter
-userInput.addEventListener("keypress", (e) => {
-  if (e.key === "Enter") sendBtn.click();
-});
-
-// ----------------------
-// 🎙️ Ghi âm → Whisper
-// ----------------------
+// record -> whisper
 recordBtn.addEventListener("click", async () => {
   if (mediaRecorder && mediaRecorder.state === "recording") {
     mediaRecorder.stop();
@@ -80,37 +64,39 @@ recordBtn.addEventListener("click", async () => {
 
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    mediaRecorder = new MediaRecorder(stream);
+    // choose mimeType safely
+    let mime = "";
+    if (MediaRecorder.isTypeSupported("audio/webm;codecs=opus")) mime = "audio/webm;codecs=opus";
+    else if (MediaRecorder.isTypeSupported("audio/webm")) mime = "audio/webm";
+    else if (MediaRecorder.isTypeSupported("audio/wav")) mime = "audio/wav";
+
+    mediaRecorder = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
     audioChunks = [];
 
-    mediaRecorder.ondataavailable = (event) => {
-      if (event.data.size > 0) audioChunks.push(event.data);
-    };
+    mediaRecorder.ondataavailable = (e) => { if (e.data && e.data.size > 0) audioChunks.push(e.data); };
 
     mediaRecorder.onstop = async () => {
-      const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
+      const audioBlob = new Blob(audioChunks, { type: audioChunks[0]?.type || "audio/webm" });
       const formData = new FormData();
-      formData.append("file", audioBlob, "record.webm");
+      formData.append("file", audioBlob, "record.webm"); // backend expects field name "file"
 
       appendMessage("user", "🎙️ (Đang gửi file ghi âm...)");
 
       try {
         const res = await fetch(`${API_BASE}/whisper`, { method: "POST", body: formData });
-
         if (!res.ok) {
-          const errText = await res.text();
-          console.error("Whisper HTTP error:", res.status, errText);
+          const txt = await res.text();
+          console.error("Whisper HTTP error:", res.status, txt);
           appendMessage("bot", `⚠️ Whisper lỗi HTTP (${res.status}).`);
           return;
         }
-
         const data = await res.json();
         if (data.text) {
           appendMessage("user", "🗣️ " + data.text);
           userInput.value = data.text;
         } else {
           appendMessage("bot", "❌ Không nhận dạng được giọng nói.");
-          console.error("Whisper error:", data);
+          console.error("Whisper unexpected:", data);
         }
       } catch (err) {
         appendMessage("bot", "⚠️ Lỗi khi gửi file ghi âm.");
@@ -119,21 +105,16 @@ recordBtn.addEventListener("click", async () => {
     };
 
     mediaRecorder.start();
-    recordBtn.textContent = "⏹️ Dừng ghi";
+    recordBtn.textContent = "⏹️ Dừng";
   } catch (err) {
     alert("Không thể truy cập micro: " + err.message);
     console.error(err);
   }
 });
 
-// ----------------------
-// 🔊 Speak - Text to Speech
-// ----------------------
+// speak (TTS)
 speakBtn.addEventListener("click", async () => {
-  if (!lastBotReply) {
-    alert("Chưa có nội dung để ThamAI nói.");
-    return;
-  }
+  if (!lastBotReply) { alert("Chưa có nội dung để ThamAI nói."); return; }
 
   try {
     const res = await fetch(`${API_BASE}/speak`, {
@@ -152,25 +133,22 @@ speakBtn.addEventListener("click", async () => {
     const blob = await res.blob();
     if (!blob.type.startsWith("audio")) {
       const txt = await blob.text();
-      console.error("TTS invalid response:", txt);
+      console.error("Phản hồi TTS không phải âm thanh:", txt);
       appendMessage("bot", "⚠️ Máy chủ chưa trả về âm thanh hợp lệ.");
       return;
     }
 
-    const audioUrl = URL.createObjectURL(blob);
-    audioPlayer.src = audioUrl;
+    const url = URL.createObjectURL(blob);
+    audioPlayer.src = url;
     audioPlayer.hidden = false;
     await audioPlayer.play();
-
   } catch (err) {
     appendMessage("bot", "⚠️ Không thể phát âm thanh.");
-    console.error(err);
+    console.error("TTS fetch failed:", err);
   }
 });
 
-// ----------------------
-// 💬 Hiển thị hội thoại
-// ----------------------
+// append message
 function appendMessage(sender, text) {
   const msg = document.createElement("div");
   msg.className = `message ${sender}`;
