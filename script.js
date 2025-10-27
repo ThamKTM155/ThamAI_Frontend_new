@@ -1,90 +1,125 @@
-// ===============================
-// ThamAI Assistant Frontend Script
-// ===============================
+const chatBox = document.getElementById('chat-box');
+const sendBtn = document.getElementById('send-btn');
+const userInput = document.getElementById('user-input');
+const recordBtn = document.getElementById('record-btn');
+const speakToggle = document.getElementById('speak-toggle');
+const settingsBtn = document.getElementById('settings-btn');
 
-const chatBox = document.getElementById("chat-box");
-const userInput = document.getElementById("user-input");
-const sendBtn = document.getElementById("sendBtn");
-const recordBtn = document.getElementById("recordBtn");
-const toggleVoiceBtn = document.getElementById("toggleVoiceBtn");
+// Popup cài đặt
+const popup = document.getElementById('settings-popup');
+const closeSettings = document.getElementById('close-settings');
+const saveSettings = document.getElementById('save-settings');
+const voiceSelect = document.getElementById('voice-select');
+const rateSlider = document.getElementById('rate-slider');
+const volumeSlider = document.getElementById('volume-slider');
 
-let isRecording = false;
+// Biến lưu cấu hình
+let voiceGender = localStorage.getItem('voiceGender') || 'female';
+let speechRate = parseFloat(localStorage.getItem('speechRate')) || 1;
+let speechVolume = parseFloat(localStorage.getItem('speechVolume')) || 1;
+
+voiceSelect.value = voiceGender;
+rateSlider.value = speechRate;
+volumeSlider.value = speechVolume;
+
+function appendMessage(sender, text) {
+  const msg = document.createElement('div');
+  msg.textContent = `${sender}: ${text}`;
+  chatBox.appendChild(msg);
+  chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+async function sendMessage() {
+  const text = userInput.value.trim();
+  if (!text) return;
+  appendMessage("Bạn", text);
+  userInput.value = "";
+
+  try {
+    const res = await fetch("https://thamai-backend-new.onrender.com/chat", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ message: text })
+    });
+    const data = await res.json();
+    appendMessage("ThamAI", data.reply);
+
+    // Phát giọng
+    speakText(data.reply);
+
+  } catch (err) {
+    appendMessage("Lỗi", "Không kết nối được tới server.");
+  }
+}
+
+// Chuyển văn bản thành giọng nói
+function speakText(text) {
+  const utterance = new SpeechSynthesisUtterance(text);
+  const voices = speechSynthesis.getVoices();
+  utterance.voice = voices.find(v =>
+    voiceGender === 'male' ? v.name.includes('Nam') || v.name.includes('Male') : v.name.includes('Nữ') || v.name.includes('Female')
+  ) || voices[0];
+  utterance.rate = speechRate;
+  utterance.volume = speechVolume;
+  speechSynthesis.speak(utterance);
+}
+
+// Ghi âm (Whisper)
 let mediaRecorder;
 let audioChunks = [];
-let currentVoiceGender = "female"; // Giọng mặc định
-let selectedVoice = null;
 
-// ====== Hàm hiển thị tin nhắn ======
-function appendMessage(sender, text) {
-    const msg = document.createElement("div");
-    msg.classList.add("message", sender === "user" ? "user-message" : "bot-message");
-    msg.textContent = text;
-    chatBox.appendChild(msg);
-    chatBox.scrollTop = chatBox.scrollHeight;
-}
+recordBtn.onclick = async () => {
+  if (mediaRecorder && mediaRecorder.state === "recording") {
+    mediaRecorder.stop();
+    recordBtn.textContent = "🎙️ Ghi âm";
+  } else {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    mediaRecorder = new MediaRecorder(stream);
+    mediaRecorder.start();
+    recordBtn.textContent = "⏹️ Dừng";
+    audioChunks = [];
 
-// ====== Hàm chọn giọng nói theo giới tính ======
-function setVoiceByGender(gender) {
-    const synth = window.speechSynthesis;
-    const voices = synth.getVoices();
+    mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+    mediaRecorder.onstop = async () => {
+      const blob = new Blob(audioChunks, { type: "audio/wav" });
+      const formData = new FormData();
+      formData.append("file", blob, "record.wav");
 
-    if (!voices.length) {
-        synth.onvoiceschanged = () => setVoiceByGender(gender);
-        return;
-    }
+      try {
+        const res = await fetch("https://thamai-backend-new.onrender.com/whisper", {
+          method: "POST",
+          body: formData
+        });
+        const data = await res.json();
+        userInput.value = data.transcription;
+        appendMessage("🎧 Whisper", data.transcription);
+      } catch (err) {
+        appendMessage("Lỗi", "Không gửi được âm thanh đến backend.");
+      }
+    };
+  }
+};
 
-    selectedVoice = voices.find(v =>
-        gender === "female"
-            ? v.name.toLowerCase().includes("female") || v.name.toLowerCase().includes("woman")
-            : v.name.toLowerCase().includes("male") || v.name.toLowerCase().includes("man")
-    );
-
-    if (!selectedVoice) {
-        selectedVoice = voices[0];
-    }
-
-    console.log(`✅ Giọng hiện tại: ${selectedVoice.name}`);
-}
-
-// ====== Hàm phát giọng nói ======
-function speakText(text) {
-    if (!text) return;
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.voice = selectedVoice;
-    utterance.rate = 1;
-    utterance.pitch = 1;
-    window.speechSynthesis.speak(utterance);
-}
-
-// ====== Nút Gửi tin nhắn ======
-sendBtn.addEventListener("click", () => {
-    const text = userInput.value.trim();
-    if (!text) return;
-    appendMessage("user", text);
-    userInput.value = "";
-
-    // Giả lập phản hồi (test)
-    setTimeout(() => {
-        const reply = `ThamAI (${currentVoiceGender === "female" ? "nữ" : "nam"}) trả lời: ${text}`;
-        appendMessage("bot", reply);
-        speakText(reply);
-    }, 700);
+// Nút gửi và Enter
+sendBtn.onclick = sendMessage;
+userInput.addEventListener("keypress", e => {
+  if (e.key === "Enter") sendMessage();
 });
 
-// ====== Nút Đổi giọng ======
-toggleVoiceBtn.addEventListener("click", () => {
-    currentVoiceGender = currentVoiceGender === "female" ? "male" : "female";
-    setVoiceByGender(currentVoiceGender);
+// Mở / đóng popup
+settingsBtn.onclick = () => popup.style.display = "flex";
+closeSettings.onclick = () => popup.style.display = "none";
 
-    const msg =
-        currentVoiceGender === "female"
-            ? "Xin chào, tôi là ThamAI giọng nữ!"
-            : "Xin chào, tôi là ThamAI giọng nam!";
-    appendMessage("bot", msg);
-    speakText(msg);
-});
+// Lưu cài đặt
+saveSettings.onclick = () => {
+  voiceGender = voiceSelect.value;
+  speechRate = parseFloat(rateSlider.value);
+  speechVolume = parseFloat(volumeSlider.value);
 
-// ====== Tải sẵn giọng khi mở trang ======
-window.speechSynthesis.onvoiceschanged = () => {
-    setVoiceByGender(currentVoiceGender);
+  localStorage.setItem('voiceGender', voiceGender);
+  localStorage.setItem('speechRate', speechRate);
+  localStorage.setItem('speechVolume', speechVolume);
+
+  alert("✅ Đã lưu cài đặt giọng & âm thanh!");
+  popup.style.display = "none";
 };
