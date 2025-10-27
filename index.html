@@ -1,29 +1,27 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ThamAI Assistant</title>
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ThamAI Assistant</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="app-container">
-    <h1>🤖 ThamAI Assistant</h1>
+    <div class="chat-container">
+        <div class="header">
+            <h1>ThamAI Assistant</h1>
+        </div>
 
-    <div id="chat-box" class="chat-box"></div>
+        <div id="chat-box" class="chat-box"></div>
 
-    <div class="input-section">
-      <textarea id="user-input" placeholder="Nhập tin nhắn..." rows="2"></textarea>
-      <div class="button-group">
-        <button id="send-btn">💬 Gửi</button>
-        <button id="record-btn">🎤 Ghi âm</button>
-        <button id="speak-btn">🔊 ThamAI nói</button>
-      </div>
+        <div class="controls">
+            <input type="text" id="user-input" placeholder="Nhập tin nhắn...">
+            <button id="sendBtn">Gửi</button>
+            <button id="recordBtn">🎤 Ghi âm</button>
+            <button id="toggleVoiceBtn">🔄 Đổi giọng</button>
+        </div>
     </div>
 
-    <audio id="audio-player" controls hidden></audio>
-  </div>
-
-  <script src="script.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
