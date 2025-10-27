@@ -1,47 +1,114 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ThamAI Assistant</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>ThamAI — Settings Pro+</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="chat-container">
-    <h1>💬 ThamAI Assistant</h1>
-    <div id="chat-box"></div>
-    <div class="controls">
-      <input type="text" id="user-input" placeholder="Nhập câu hỏi..." />
-      <button id="send-btn">Gửi</button>
-      <button id="record-btn">🎙️ Ghi âm</button>
-      <button id="speak-toggle">🔄 Đổi giọng</button>
-      <button id="settings-btn">⚙️ Cài đặt</button>
-    </div>
-  </div>
+  <main class="container">
+    <header>
+      <h1>ThamAI — Trợ lý kể chuyện</h1>
+      <div class="top-controls">
+        <button id="settings-btn" class="btn">⚙️ Cài đặt</button>
+        <button id="record-btn" class="btn">🎤 Ghi âm</button>
+        <button id="speak-btn" class="btn">🔊 ThamAI nói</button>
+      </div>
+    </header>
 
-  <!-- Popup cài đặt -->
-  <div id="settings-popup" class="popup">
-    <div class="popup-content">
-      <h2>⚙️ Cài đặt giọng & âm thanh</h2>
-      <label>Giọng nói:</label>
-      <select id="voice-select">
-        <option value="female">Giọng Nữ</option>
-        <option value="male">Giọng Nam</option>
-      </select>
+    <section class="content">
+      <aside class="left-panel">
+        <div id="avatar" class="avatar">
+          <!-- simple svg avatar; mouth will animate with 'speaking' class -->
+          <svg viewBox="0 0 200 200" preserveAspectRatio="xMidYMid meet">
+            <defs>
+              <clipPath id="faceClip"><circle cx="100" cy="90" r="60"/></clipPath>
+            </defs>
+            <circle cx="100" cy="90" r="60" fill="#FFDBBD"/>
+            <!-- eyes -->
+            <g id="eyes">
+              <ellipse cx="80" cy="80" rx="8" ry="6" fill="#222"/>
+              <ellipse cx="120" cy="80" rx="8" ry="6" fill="#222"/>
+            </g>
+            <!-- mouth area: separate group to animate -->
+            <g id="mouth" transform="translate(0,18)">
+              <ellipse cx="100" cy="100" rx="20" ry="7" fill="#a33" />
+            </g>
+            <!-- blush -->
+            <circle cx="70" cy="100" r="6" fill="#f4a" opacity="0.15"/>
+            <circle cx="130" cy="100" r="6" fill="#f4a" opacity="0.15"/>
+          </svg>
+        </div>
 
-      <label>Tốc độ nói:</label>
-      <input type="range" id="rate-slider" min="0.5" max="1.5" step="0.1" value="1" />
+        <div class="visualizer">
+          <canvas id="vizCanvas"></canvas>
+        </div>
+      </aside>
 
-      <label>Âm lượng:</label>
-      <input type="range" id="volume-slider" min="0" max="1" step="0.1" value="1" />
+      <section class="chat-panel">
+        <div id="chat-box" class="chat-box" aria-live="polite"></div>
 
-      <div class="popup-buttons">
-        <button id="save-settings">💾 Lưu</button>
-        <button id="close-settings">❌ Đóng</button>
+        <form id="msg-form" class="msg-form">
+          <textarea id="user-input" placeholder="Gõ câu hỏi hoặc lệnh..." rows="2"></textarea>
+          <div class="form-actions">
+            <button type="button" id="send-btn" class="btn primary">Gửi</button>
+            <button type="button" id="clear-btn" class="btn">Xóa</button>
+          </div>
+        </form>
+      </section>
+    </section>
+
+    <!-- Settings modal -->
+    <div id="settings-modal" class="modal hidden" role="dialog" aria-modal="true">
+      <div class="modal-content">
+        <header class="modal-header">
+          <h2> Cài đặt giọng & âm thanh </h2>
+          <button id="close-settings" class="btn">✖</button>
+        </header>
+
+        <div class="modal-body">
+          <label>Ngôn ngữ:
+            <select id="lang-select">
+              <option value="vi">Tiếng Việt (vi)</option>
+              <option value="en">Tiếng Anh (en)</option>
+            </select>
+          </label>
+
+          <label>Giọng:
+            <select id="gender-select">
+              <option value="female">ThạchAI (nữ) — Miền Bắc (mặc định)</option>
+              <option value="male">ThạchAI (nam) — Miền Bắc</option>
+            </select>
+          </label>
+
+          <div class="slider-row">
+            <label>Tốc độ (rate): <span id="rate-val">1.0</span></label>
+            <input id="rate" type="range" min="0.6" max="1.6" step="0.05" value="1.0">
+          </div>
+
+          <div class="slider-row">
+            <label>Pitch (cao độ): <span id="pitch-val">1.0</span></label>
+            <input id="pitch" type="range" min="0.6" max="1.6" step="0.05" value="1.0">
+          </div>
+
+          <div class="switch-row">
+            <label><input id="toggle-visual" type="checkbox" checked> Hiển thị sóng âm</label>
+            <label><input id="toggle-avatar" type="checkbox" checked> Hiển thị avatar biểu cảm</label>
+          </div>
+
+          <div class="settings-actions">
+            <button id="test-voice" class="btn">🔊 Thử giọng</button>
+            <button id="save-settings" class="btn primary">Lưu</button>
+            <button id="reset-settings" class="btn">Đặt lại</button>
+          </div>
+        </div>
       </div>
     </div>
-  </div>
 
-  <script src="script.js"></script>
+    <audio id="audio-player" controls hidden></audio>
+  </main>
+
+  <script src="script.js" type="module"></script>
 </body>
 </html>
