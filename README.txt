@@ -40,4 +40,31 @@ PHẦN MỞ RỘNG: GIAO DIỆN CHAT (ThamAI Chat Ultra)
 - Cả hai trang (index.html và chat.html) dùng chung file backend.
 - Có thể triển khai đồng thời trên Vercel.
 - Sau khi thêm file, commit lên GitHub và Vercel sẽ tự build.
+=========================================================================
+---
+
+## 🔹 THAMAI CHAT ULTRA+ (phiên bản trò chuyện)
+
+**Cấu trúc:**
+- chat.html
+- chat.css
+- chat.js
+
+**Chức năng:**
+- Giao diện chat tối hiện đại (Dark UI)
+- Hiệu ứng kiểm tra backend 🔄, báo trạng thái kết nối ✅ ❌
+- Avatar cười sáng nhẹ khi kết nối hoặc trả lời
+- Âm thanh "ting" thông báo phản hồi
+- Hiển thị "ThamAI đang suy nghĩ..." khi đợi phản hồi
+- Nút chuyển nhanh sang trang `settings.html`
+
+**Hướng dẫn cài đặt:**
+1. Copy 3 file trên vào cùng thư mục với `index.html` (frontend).
+2. Khi mở `chat.html`, trình duyệt sẽ tự kiểm tra backend.
+3. Nhấn **🔁 Thử lại kết nối** nếu backend Render tạm nghỉ.
+4. Chọn **⚙️ Cài đặt** để sang trang giọng nói (Settings Ultra+).
+
+**Lưu ý:**  
+Backend cần có endpoint `/test` trả về `"ok"` hoặc `"success"` để frontend nhận diện thành công.
+
 ───────────────────────────────

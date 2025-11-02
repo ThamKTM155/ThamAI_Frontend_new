@@ -1,31 +1,84 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ThamAI Chat Ultra</title>
-  <link rel="stylesheet" href="chat.css" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>ThamAI Chat Ultra+ v1.2</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="chat-container">
-    <header>
-      <h1>🤖 ThamAI Chat Ultra</h1>
-      <button id="btnSettings">⚙️ Cài đặt</button>
+  <div id="app" class="container">
+    <header class="topbar">
+      <div class="logo">
+        <img src="assets/avatar.png" alt="avatar" id="avatar-img">
+        <h1>ThamAI Chat Ultra+</h1>
+      </div>
+      <div class="status-area">
+        <div id="backend-status" class="status disconnected">
+          <span id="status-icon">◻</span>
+          <span id="status-text">Không kết nối</span>
+        </div>
+        <button id="retry-btn" title="Thử lại kết nối">🔁</button>
+        <button id="settings-btn" title="Cài đặt">⚙️</button>
+      </div>
     </header>
 
-    <div id="chatBox" class="chat-box"></div>
+    <main class="main">
+      <section class="chat-window">
+        <div id="messages" class="messages"></div>
+        <div class="composer">
+          <textarea id="user-input" placeholder="Nhập tin nhắn..."></textarea>
+          <div class="composer-controls">
+            <button id="send-btn" class="primary">Gửi</button>
+            <button id="record-btn">🎤 Ghi âm</button>
+            <button id="speak-btn">🔊 ThamAI nói</button>
+          </div>
+        </div>
+      </section>
 
-    <div class="input-area">
-      <input type="text" id="userInput" placeholder="Nhập tin nhắn..." />
-      <button id="sendBtn">Gửi</button>
-      <button id="voiceBtn">🎤</button>
-    </div>
+      <aside id="settings-panel" class="settings hidden">
+        <h2>Cài đặt giọng & âm thanh</h2>
 
-    <footer>
-      <small>Phiên bản: ThamAI Chat Ultra (frontend)</small>
-    </footer>
+        <label>Chọn giọng:
+          <select id="voice-select">
+            <option value="female">ThạchAI (Nữ) — miền Bắc (mặc định)</option>
+            <option value="male">ThạchAI (Nam) — miền Bắc</option>
+          </select>
+        </label>
+
+        <label>Ngôn ngữ TTS:
+          <select id="lang-select">
+            <option value="vi">vi (Tiếng Việt)</option>
+            <option value="en">en (English)</option>
+          </select>
+        </label>
+
+        <label>Auto-play TTS:
+          <input type="checkbox" id="autoplay-tts">
+        </label>
+
+        <div class="settings-row">
+          <button id="test-voice">🔊 Thử giọng</button>
+          <button id="save-settings">💾 Lưu</button>
+        </div>
+
+        <hr>
+
+        <div>
+          <strong>Sóng âm & Avatar</strong>
+          <div id="wave-container"><canvas id="wave-canvas"></canvas></div>
+          <div id="mouth" class="mouth"></div>
+        </div>
+
+        <hr>
+
+        <small>Phiên bản: ThamAI Chat Ultra+ v1.2</small>
+      </aside>
+    </main>
+    <audio id="audio-player" hidden crossorigin="anonymous"></audio>
+    <audio id="ting-audio" src="assets/ting.mp3" hidden></audio>
   </div>
 
-  <script src="chat.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>

@@ -1,93 +1,37 @@
 :root{
-  --bg:#0f1724;
-  --card:#0b1220;
-  --accent:#00d1a1;
-  --muted:#9aa6b2;
-  --glass: rgba(255,255,255,0.04);
+  --bg:#071226; --card:#0d1a2b; --accent:#09a17a; --muted:#bfcbd6; --white:#f8fafc;
 }
 *{box-sizing:border-box}
-body{
-  margin:0;
-  font-family:Inter,system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial;
-  background:linear-gradient(180deg,#071024 0%, #081827 100%);
-  color:#e6f0f2;
-  -webkit-font-smoothing:antialiased;
-  -moz-osx-font-smoothing:grayscale;
-}
-.container{
-  width:960px;
-  max-width:95%;
-  margin:28px auto;
-  padding:20px;
-  background:var(--card);
-  border-radius:12px;
-  box-shadow:0 10px 40px rgba(2,6,23,0.6);
-}
-header{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap:16px;
-  margin-bottom:12px;
-}
-h1{font-size:20px;margin:0;color:#cceef0}
-#status-row{display:flex;align-items:center;gap:8px}
-#backend-indicator{
-  display:flex;align-items:center;gap:8px;
-  padding:8px 12px;background:var(--glass);
-  border-radius:10px;color:var(--muted);transition:all .25s ease;
-}
-#backend-indicator.checking{box-shadow:inset 0 0 0 1px rgba(255,255,255,0.02); color:orange}
-#backend-indicator.ok{background:linear-gradient(90deg, rgba(0,200,150,0.08), rgba(0,200,150,0.03)); color:var(--accent)}
-#retry-backend{background:#16324a;border:none;color:white;padding:8px 10px;border-radius:8px;cursor:pointer}
-#retry-backend:hover{transform:translateY(-2px)}
+body{margin:0;font-family:system-ui,Segoe UI,Roboto,Arial; background:linear-gradient(180deg,#041226,#071c2e); color:var(--white); min-height:100vh}
+.container{max-width:1100px;margin:24px auto;padding:16px}
+.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.logo{display:flex;align-items:center;gap:10px}
+.logo img{width:48px;height:48px;border-radius:8px}
+.topbar h1{margin:0;font-size:22px}
+.status-area{display:flex;align-items:center;gap:8px}
+.status{padding:8px 12px;border-radius:8px;display:flex;gap:8px;align-items:center}
+.status.disconnected{background:#2f3942;color:#ffd08a}
+.status.connected{background:#05331f;color:#bff3d6;box-shadow:0 0 10px rgba(9,161,122,.2)}
+#retry-btn,#settings-btn{background:transparent;border:1px solid rgba(255,255,255,.06);color:var(--white);padding:6px 8px;border-radius:8px;cursor:pointer}
 
-#avatar-section{display:flex;gap:20px;align-items:center}
-#avatar-face{
-  position:relative;width:180px;height:180px;border-radius:50%;
-  background:linear-gradient(180deg,#ffd89b,#f5a623);
-  box-shadow:0 8px 30px rgba(0,210,160,0.06);
-  display:flex;align-items:center;justify-content:center;
-  transition:transform .25s ease, box-shadow .25s ease;
-}
-.eye{
-  position:absolute;top:60px;width:22px;height:22px;background:black;border-radius:50%;
-  transition:all .08s linear;
-}
-.eye.left{left:48px}
-.eye.right{right:48px}
-.mouth{
-  position:absolute;bottom:48px;left:50%;width:70px;height:18px;background:black;border-radius:0 0 60px 60px;transform:translateX(-50%);transition:height .06s linear, transform .06s linear;
-}
-
-/* glow when speaking */
-.glow{
-  box-shadow:0 0 30px 6px rgba(0,210,160,0.25);
-  transform:scale(1.03);
-}
-
-/* canvas wave */
-#wave-canvas{flex:1;border-radius:8px;background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);}
-
-/* controls */
-#controls{margin-top:18px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.03)}
-.row{display:flex;gap:10px;align-items:center;margin-bottom:10px}
-.row.small{font-size:13px;color:var(--muted)}
-select, button{padding:8px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit;cursor:pointer}
-button:disabled{opacity:.5;cursor:not-allowed}
-
-/* pulse animation for checking */
-@keyframes pulse {
-  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255,165,0,0.25); }
-  70% { transform: scale(1.02); box-shadow: 0 0 20px 8px rgba(255,165,0,0.06); }
-  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255,165,0,0); }
-}
-.checking { animation: pulse 1.6s infinite; }
-
-/* responsive */
-@media (max-width:700px){
-  #avatar-face{width:120px;height:120px}
-  .eye.left{left:28px}.eye.right{right:28px}
-  #wave-canvas{height:80px}
-  .container{padding:14px}
-}
+.main{display:flex;gap:16px}
+.chat-window{flex:1;background:var(--card);padding:12px;border-radius:12px;min-height:560px;display:flex;flex-direction:column}
+.messages{flex:1;overflow:auto;padding:8px;display:flex;flex-direction:column;gap:10px}
+.message{max-width:80%;padding:10px 14px;border-radius:14px;background:rgba(255,255,255,.06)}
+.message.user{align-self:flex-end;background:linear-gradient(90deg,#067dd1,#05a1be);color:white}
+.composer{padding-top:8px;display:flex;flex-direction:column;gap:8px}
+textarea#user-input{width:100%;min-height:54px;border-radius:8px;padding:10px;border:1px solid rgba(255,255,255,.06);background:transparent;color:var(--white)}
+.composer-controls{display:flex;gap:8px;align-items:center}
+button{cursor:pointer;padding:8px 12px;border-radius:10px;border:0;background:var(--accent);color:white}
+button.primary{background:#0a84ff}
+.settings{width:320px;background:rgba(255,255,255,.03);padding:12px;border-radius:12px}
+.settings.hidden{display:none}
+.settings h2{margin-top:0}
+.settings label{display:block;margin:8px 0;color:var(--muted)}
+.settings-row{display:flex;gap:8px}
+#wave-container{height:120px;background:linear-gradient(180deg,#051225,#08162a);border-radius:8px;padding:6px;margin:8px 0;display:flex;align-items:center;justify-content:center}
+canvas#wave-canvas{width:100%;height:100%}
+.mouth{width:120px;height:30px;border-radius:20px;background:#081a21;margin:10px auto;transition:all .08s ease}
+.mouth.smile{background:linear-gradient(90deg,#0b7,#08b);box-shadow:0 6px 20px rgba(8,161,122,.12)}
+.small{font-size:12px;color:var(--muted)}
+#avatar-img{filter:drop-shadow(0 4px 12px rgba(0,0,0,.6))}
