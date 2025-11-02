@@ -68,3 +68,28 @@ Hoàng Ngọc Thắm (Thắm Tạo KT)
 Trợ lý phát triển: ChatGPT (GPT-5)
 
 “ThamAI – Trợ lý biết nghe, biết nói và biết quan tâm.” 💖
+================================================================================
+ThamAI Frontend — Settings Ultra+
+
+Files:
+- index.html
+- style.css
+- script.js
+
+Hướng dẫn nhanh:
+1. Thay giá trị API_BASE trong script.js thành URL backend của bạn (ví dụ Render).
+2. Backend cần hỗ trợ:
+   - GET /test (hoặc GET /) trả JSON { message, status:"ok" }
+   - POST /whisper (field 'file' trong FormData) -> trả JSON { text: "..." } (có thể mô phỏng)
+   - POST /speak -> nhận JSON { text, gender } -> trả audio/mpeg (gTTS) hoặc lỗi
+   - POST /chat -> nhận JSON { message } -> trả JSON { reply }
+
+3. Kiểm tra:
+   - Mở index.html bằng web server (hoặc cách dev), cho phép mic khi được yêu cầu.
+   - Nhấn "Bắt đầu ghi âm" → nói → "Dừng" → frontend sẽ gửi file tới /whisper.
+   - Chọn giọng, nhấn "Thử giọng" để test (browser voice hoặc backend TTS).
+   - Nút "🔁 Thử lại" kiểm tra kết nối backend.
+
+Lưu ý:
+- Nếu dùng Web Speech API (browser voice) không cần backend TTS.
+- Để sóng âm hiển thị khi phát file âm từ backend, backend trả audio/mpeg, frontend sẽ kết nối audio element tới Web Audio API.
