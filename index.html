@@ -1,64 +1,38 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>ThamAI — Settings Ultra+</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ThamAI Ultra+ v1.3 🎙️</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <main class="container">
-    <header>
-      <h1>ThamAI Settings Ultra+</h1>
-      <div id="status-row">
-        <div id="backend-indicator" class="checking">
-          <span id="backend-icon">🔄</span>
-          <span id="backend-text">Đang kiểm tra kết nối...</span>
-        </div>
-        <button id="retry-backend" title="Thử lại kết nối">🔁</button>
-      </div>
-    </header>
+  <div class="assistant-container">
+    <div class="avatar-wrapper">
+      <img id="avatar" src="assets/avatar.png" alt="ThamAI Avatar">
+      <canvas id="waveCanvas"></canvas>
+    </div>
 
-    <section id="avatar-section">
-      <div id="avatar-face" aria-hidden>
-        <div class="eye left"></div>
-        <div class="eye right"></div>
-        <div class="mouth"></div>
-      </div>
+    <div id="status" class="status">🔄 Đang kiểm tra backend...</div>
 
-      <canvas id="wave-canvas" width="800" height="120"></canvas>
-    </section>
+    <textarea id="userInput" placeholder="Nhập tin nhắn..."></textarea>
+    <div class="buttons">
+      <button id="sendBtn">💬 Gửi</button>
+      <button id="speakBtn">🎙️ Nói</button>
+      <button id="settingsBtn">⚙️ Cài đặt</button>
+    </div>
 
-    <section id="controls">
-      <div class="row">
-        <label for="voice-gender">Chọn giọng:</label>
-        <select id="voice-gender">
-          <option value="female">ThạchAI (Nữ) — miền Bắc (mặc định)</option>
-          <option value="male">ThạchAI (Nam) — miền Bắc</option>
-          <option value="browser">Browser Voice (Web Speech)</option>
-        </select>
+    <audio id="ttsAudio"></audio>
 
-        <label for="voice-list" id="voice-list-label" style="display:none">Chọn voice Web Speech:</label>
-        <select id="voice-list" style="display:none"></select>
-
-        <button id="test-voice">🔊 Thử giọng</button>
-      </div>
-
-      <div class="row">
-        <button id="start-record">🎤 Bắt đầu ghi âm</button>
-        <button id="stop-record" disabled>⏹️ Dừng</button>
-        <span id="rec-status"></span>
-      </div>
-
-      <div class="row small">
-        <label><input type="checkbox" id="auto-play-tts"> Tự động phát TTS</label>
-      </div>
-    </section>
-
-    <footer>
-      <small>Phiên bản: ThamAI Settings Ultra+ (frontend)</small>
-    </footer>
-  </main>
+    <div id="settingsPanel" class="settings hidden">
+      <h3>🎧 Cài đặt giọng & âm thanh</h3>
+      <label>Giọng hiện tại:</label>
+      <select id="voiceSelect"></select>
+      <button id="testVoice">🔊 Thử giọng</button>
+      <label><input type="checkbox" id="showWave" checked> Hiển thị sóng âm</label>
+      <button id="closeSettings">Đóng</button>
+    </div>
+  </div>
 
   <script src="script.js"></script>
 </body>
