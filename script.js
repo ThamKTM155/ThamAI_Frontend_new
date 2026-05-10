@@ -46,7 +46,8 @@ fetch("https://thamai-backend-new.onrender.com/chat", {
   console.error(err);
   addMessage("Lỗi kết nối tới AI backend", "system");
 });
-   });
+
+});
 /* ======================================================
    🎙️ NHẬN DẠNG GIỌNG NÓI (SpeechRecognition)
 ====================================================== */
