@@ -27,15 +27,25 @@ sendBtn.addEventListener("click", () => {
   if (!text) return;
   addMessage(text, "user");
   textInput.value = "";
-
-  // Giả lập trả lời (sau này kết nối backend)
-  setTimeout(() => {
-    const reply = fakeResponse(text);
-    addMessage(reply, "system");
-    speakText(reply);
-  }, 500);
+fetch("https://thamai-backend-new.onrender.com/chat", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({
+    message: text
+  })
+})
+.then(res => res.json())
+.then(data => {
+  const reply = data.reply || "Không có phản hồi từ AI";
+  addMessage(reply, "system");
+  speakText(reply);
+})
+.catch(err => {
+  console.error(err);
+  addMessage("Lỗi kết nối tới AI backend", "system");
 });
-
 /* ======================================================
    🎙️ NHẬN DẠNG GIỌNG NÓI (SpeechRecognition)
 ====================================================== */
@@ -67,9 +77,25 @@ function startListening() {
     const text = e.results[0][0].transcript;
     addMessage(text, "user");
 
-    const reply = fakeResponse(text);
-    addMessage(reply, "system");
-    speakText(reply);
+fetch("https://thamai-backend-new.onrender.com/chat", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({
+    message: text
+  })
+})
+.then(res => res.json())
+.then(data => {
+  const reply = data.reply || "Không có phản hồi từ AI";
+  addMessage(reply, "system");
+  speakText(reply);
+})
+.catch(err => {
+  console.error(err);
+  addMessage("Lỗi kết nối tới AI backend", "system");
+});
   };
 
   recognition.onend = () => {
